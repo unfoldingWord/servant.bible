@@ -1,7 +1,9 @@
 name: Deploy
 
 # Production deploys only by manual dispatch, never automatically, so a merge
-# cannot change what servant.bible serves without a deliberate step.
+# cannot change what servant.bible serves without a deliberate step. The
+# dispatch must be run from main: any other ref fails before checkout, so
+# unreviewed branch code can never reach production this way.
 on:
   workflow_dispatch:
 
@@ -14,7 +16,18 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     steps:
+      - name: Refuse any ref other than main
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::Production deploys only from main; this dispatch selected ${GITHUB_REF}."
+            exit 1
+          fi
+          echo "Dispatched from main (${GITHUB_SHA})."
+
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4

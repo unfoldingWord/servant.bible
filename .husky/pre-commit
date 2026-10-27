@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+# Every gate below is blocking: the first failure stops the hook and refuses the commit.
+set -e
 
 echo "Running lint-staged..."
 npx lint-staged

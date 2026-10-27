@@ -2,7 +2,9 @@ name: Release Tag
 
 # After CI passes on main, tag the merged commit with the package.json version.
 # Every pull request bumps the version (CLAUDE.md), so each merge gets a tag.
-# A version that is already tagged is left alone.
+# A rerun on the same commit is a no-op. A tag that already exists on a
+# different commit means a pull request merged without bumping the version:
+# the job fails so the missed bump is visible, not silently untagged.
 on:
   workflow_run:
     workflows: ['CI']
@@ -28,9 +30,14 @@ jobs:
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
           tag="v${version}"
-          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
-            echo "${tag} already exists; nothing to do."
-            exit 0
+          head="${{ github.event.workflow_run.head_sha }}"
+          if existing="$(git rev-parse -q --verify "refs/tags/${tag}^{commit}")"; then
+            if [ "${existing}" = "${head}" ]; then
+              echo "${tag} already points at ${head}; nothing to do."
+              exit 0
+            fi
+            echo "::error::${tag} already exists at ${existing}, but main is now at ${head}. A pull request merged without bumping package.json; bump it in a follow-up pull request."
+            exit 1
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
