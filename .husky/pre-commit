@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+# Every gate below is blocking: the first failure stops the hook and refuses the commit.
+set -e
+
+echo "Running lint-staged..."
+npx lint-staged
+
+echo "Running type checks..."
+pnpm run check
+
+echo "Running tests..."
+pnpm run test
+
+echo "Running build..."
+pnpm run build

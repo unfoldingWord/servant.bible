@@ -1,0 +1,14 @@
+# Normalize line endings across all contributors. Prettier checks for LF, and
+# CI runs on Linux; `eol=lf` keeps Windows checkouts from failing format:check.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.wasm binary
+*.pdf binary

@@ -19,13 +19,40 @@ than this page.
 
 ## What is in this repository
 
-| Path | Contents |
-| --- | --- |
-| [`docs/`](docs/) | Documentation, starting with the [decision records](docs/README.md). |
-| Issues | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list. |
+| Path                   | Contents                                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| [`docs/`](docs/)       | Documentation, starting with the [decision records](docs/README.md).                               |
+| [`src/`](src/)         | The router Worker that owns the apex ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)). |
+| [`public/`](public/)   | Static assets the Worker serves; the generated page will land here.                                |
+| [`tests/`](tests/)     | Vitest tests that run inside the Workers runtime.                                                  |
+| [`.github/`](.github/) | CI on every pull request, deployments from CI, Dependabot.                                         |
+| Issues                 | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list.    |
 
-The list of servers, and the page and router built from it, will live in this
-repository as well.
+The list of servers, and the page built from it, will live in this repository
+as well.
+
+## Development
+
+Requires Node 22 (`.nvmrc`) and pnpm.
+
+```sh
+pnpm install
+pnpm dev            # wrangler dev on localhost:8787
+pnpm test           # Vitest in the Workers runtime
+pnpm lint           # ESLint on src/, tests/, scripts/
+pnpm format:check   # Prettier
+pnpm check          # tsc
+pnpm build          # wrangler build
+pnpm audit:prod     # production tree, any severity fails
+pnpm audit:all      # full tree, high or critical fails
+```
+
+The pre-commit hook runs the same gates. CI runs them on every pull request.
+
+Deployments run from CI only. A merge to `main` deploys staging; production
+deploys by manual dispatch of the Deploy workflow. Each deployment reports its
+version at `/health`. See [`CLAUDE.md`](CLAUDE.md) for the rules every
+contributor and agent follows here.
 
 ## Related repositories
 

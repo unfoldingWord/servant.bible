@@ -1,0 +1,67 @@
+name: Deploy
+
+# Production deploys only by manual dispatch, never automatically, so a merge
+# cannot change what servant.bible serves without a deliberate step. The
+# dispatch must be run from main: any other ref fails before checkout, so
+# unreviewed branch code can never reach production this way.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse any ref other than main
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::Production deploys only from main; this dispatch selected ${GITHUB_REF}."
+            exit 1
+          fi
+          echo "Dispatched from main (${GITHUB_SHA})."
+
+      # Pin the checkout to the commit the dispatch captured. `ref: main` would
+      # re-resolve the branch here, so a merge between clicking Run and this step
+      # would deploy a commit the operator never selected.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # This job deploys with NO --env flag, so the top-level [vars] block is
+      # what reaches production. Fail loudly if its label ever drifts.
+      - name: Assert production environment label
+        run: |
+          set -euo pipefail
+          value="$(sed -n '/^\[vars\]/,/^\[/p' wrangler.toml | sed -n 's/^ENVIRONMENT *= *"\(.*\)"/\1/p')"
+          echo "wrangler.toml top-level [vars] ENVIRONMENT = '$value'"
+          if [ "$value" != "production" ]; then
+            echo "::error file=wrangler.toml::top-level [vars] ENVIRONMENT must be \"production\" (got \"$value\")"
+            exit 1
+          fi
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Deploy to Production
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
