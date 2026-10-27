@@ -28,7 +28,7 @@ jobs:
       # Pin the checkout to the commit the dispatch captured. `ref: main` would
       # re-resolve the branch here, so a merge between clicking Run and this step
       # would deploy a commit the operator never selected.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
 
