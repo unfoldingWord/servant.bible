@@ -16,8 +16,10 @@ Version 0.1 is in progress. The work is organised as a short task list:
 
 1. Separate BT Servant from Servant.Bible. **Done:** see
    [ADR 0001](docs/adr/0001-separate-bt-servant-from-servant-bible.md).
-2. Agree a naming convention for the servers under `servant.bible`.
-3. Move the unfoldingWord MCP servers to `servant.bible` hostnames.
+2. Agree a naming convention for the servers under `servant.bible`. **Done:** see
+   [ADR 0002](docs/adr/0002-url-naming-convention.md) and
+   [ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md).
+3. Move the unfoldingWord MCP servers to their `servant.bible` addresses.
 4. Publish the list of servers from this repository as a simple page.
 5. Point the BT Servant admin portal at the new addresses.
 
