@@ -47,15 +47,16 @@ Examples:
 servant.bible/org/uw/server/tc-helps/mcp
 servant.bible/org/uw/server/tc-helps/v2/mcp
 servant.bible/org/uw/server/fia/mcp
-servant.bible/org/aquifer/server/aquifer/mcp
-servant.bible/s/aquifer
+servant.bible/org/klappy/server/aquifer/mcp      the community Aquifer server, run by Klappy
+servant.bible/org/aquifer/server/aquifer/mcp     the official Aquifer server, run by the Aquifer team
+servant.bible/s/aquifer                          whichever of the two the list marks as the shorthand
 ```
 
 ### Entities
 
 | Entity | Where it lives | Rule |
 | --- | --- | --- |
-| **Organization** | path segment after `/org/` | The body that runs the server. Short lowercase slug: `uw`, `aquifer`, `tyndale`. |
+| **Organization** | path segment after `/org/` | The **operator**: the body or person that keeps the server alive, not the owner of the content it serves. Short lowercase slug: `uw`, `aquifer`, `klappy`, `tyndale`. Two operators may each offer a server with the same server slug; only the shorthand must be unique across them. |
 | **Server** | path segment after `/server/` | One MCP server. Lowercase, hyphenated, unique within its organization: `tc-helps`, `fia`, `obs-5m`. |
 | **Version** | optional path segment before `/mcp` | Explicit when pinned (`v1`, `v2`). When omitted, the address serves whichever version the list marks as current. A consumer that needs stability pins one. |
 | **Resource** | the list, not the path | What a server covers (translation notes, dictionary, Bible text). One server covers many resources, so resource is metadata on the list entry, not an address. |

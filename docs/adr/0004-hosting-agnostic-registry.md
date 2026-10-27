@@ -61,12 +61,15 @@ ADR 0002:
 The `aquifer` entry fronts **Klappy's server** for now:
 
 ```
-servant.bible/org/aquifer/server/aquifer/mcp  ->  https://aquifer.klappy.dev/mcp
-servant.bible/s/aquifer                       ->  same
+servant.bible/org/klappy/server/aquifer/mcp  ->  https://aquifer.klappy.dev/mcp
+servant.bible/s/aquifer                      ->  same
 ```
 
-Operator: Klappy. This is the server BT Servant already uses on staging and
-production, so fronting it changes nothing about what BT Servant can answer.
+Operator: Klappy, which is why it sits under `org/klappy` and not `org/aquifer`
+(ADR 0002: the organization segment names the operator). This is the server BT
+Servant already uses on staging and production, so fronting it changes nothing
+about what BT Servant can answer. The `org/aquifer` path stays free for the
+official server, so the two can be listed side by side.
 
 The official server is recorded as the alternative, not chosen, for these
 reasons as of 2026-10-27:
@@ -83,8 +86,10 @@ reasons as of 2026-10-27:
   question. Per-address limits would be shared by every Servant.Bible consumer,
   since the router's outbound addresses are Cloudflare's.
 
-Switching the entry, or listing both as two servers under the `aquifer`
-organization, is a list change reviewed in this repository, not a new address.
+Listing the official server as well, at
+`servant.bible/org/aquifer/server/aquifer/mcp`, or moving the `/s/aquifer`
+shorthand from one to the other, is a list change reviewed in this repository,
+not a new address.
 
 ## Consequences
 
