@@ -31,31 +31,31 @@ Servant switched off.
 
 ### Stays in BT Servant
 
-| Component | Why it stays |
-| --- | --- |
-| `bt-servant-worker` | The orchestrator. Its MCP client, the server pool in KV, the resource listing and priority endpoints, and the admin API all exist to serve a conversation. The worker consumes the resource layer; it is not part of it. |
-| `bt-servant-whatsapp-gateway`, `bt-servant-telegram-gateway`, `bt-servant-signal-gateway` | Channel relays into the worker. |
-| `bt-servant-web-client` | Chat UI. |
-| `bt-servant-admin-portal`, `baruch` | Administration of the chat product, including which resource servers it uses. |
-| `bt-servant-telemetry`, `bt-servant-message-broker`, `bt-servant-log-viewer`, `bt-servant-report-sender`, `bt-servant-site` | Operations and presence of the chat product. |
-| `bt-servant-engine`, `bt-servant-engine-data-loaders` | The V1 engine. Retired rather than movable. |
+| Component                                                                                                                   | Why it stays                                                                                                                                                                                                             |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `bt-servant-worker`                                                                                                         | The orchestrator. Its MCP client, the server pool in KV, the resource listing and priority endpoints, and the admin API all exist to serve a conversation. The worker consumes the resource layer; it is not part of it. |
+| `bt-servant-whatsapp-gateway`, `bt-servant-telegram-gateway`, `bt-servant-signal-gateway`                                   | Channel relays into the worker.                                                                                                                                                                                          |
+| `bt-servant-web-client`                                                                                                     | Chat UI.                                                                                                                                                                                                                 |
+| `bt-servant-admin-portal`, `baruch`                                                                                         | Administration of the chat product, including which resource servers it uses.                                                                                                                                            |
+| `bt-servant-telemetry`, `bt-servant-message-broker`, `bt-servant-log-viewer`, `bt-servant-report-sender`, `bt-servant-site` | Operations and presence of the chat product.                                                                                                                                                                             |
+| `bt-servant-engine`, `bt-servant-engine-data-loaders`                                                                       | The V1 engine. Retired rather than movable.                                                                                                                                                                              |
 
 ### Moves to Servant.Bible
 
-| Component | Notes |
-| --- | --- |
-| `translation-helps-mcp` | unfoldingWord-owned. Door43 translation helps. |
-| `fia-mcp` | unfoldingWord-owned. FIA internalization. |
-| `obs-5m-mcp` | unfoldingWord-owned. Open Bible Stories and Five Movements. |
-| Aquifer | Which Aquifer server BT Servant points at (the community server on `klappy.dev` or the official `api2.aquifer.bible/mcp`) is decided under task 3, not here. Either way it is a Servant.Bible resource. |
-| New datasets | Issues #1 to #5 in this repo. Nothing to move; they start here. |
+| Component               | Notes                                                                                                                                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `translation-helps-mcp` | unfoldingWord-owned. Door43 translation helps.                                                                                                                                                          |
+| `fia-mcp`               | unfoldingWord-owned. FIA internalization.                                                                                                                                                               |
+| `obs-5m-mcp`            | unfoldingWord-owned. Open Bible Stories and Five Movements.                                                                                                                                             |
+| Aquifer                 | Which Aquifer server BT Servant points at (the community server on `klappy.dev` or the official `api2.aquifer.bible/mcp`) is decided under task 3, not here. Either way it is a Servant.Bible resource. |
+| New datasets            | Issues #1 to #5 in this repo. Nothing to move; they start here.                                                                                                                                         |
 
 ### Out of scope, deliberately
 
-| Component | Why |
-| --- | --- |
+| Component                                              | Why                                                                                                                                                                                                                                           |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ptxprint-mcp` and the `bt-servant-ptxprint` R2 bucket | A hackathon experiment. Disabled on staging, absent from production. Not a Servant.Bible resource and not part of this split. The worker still serves that bucket on a public route; removing that route is a later cleanup, not a v0.1 item. |
-| `bt-servant-kb-worker` | A proof of concept that never took flight. Ignored. |
+| `bt-servant-kb-worker`                                 | A proof of concept that never took flight. Ignored.                                                                                                                                                                                           |
 
 ## Is BT Servant entangled with Servant.Bible?
 
@@ -80,14 +80,14 @@ servers exist under their Servant.Bible hostnames (task 3).
 Read from the worker's admin API. This is the input to task 3's "list every
 uW-owned MCP server".
 
-| Pool id | Production | Staging | Owner |
-| --- | --- | --- | --- |
-| `translation-helps` | `tc-helps.mcp.servant.bible/api/mcp` (v1, Pages) | `tc-helps.mcp.servant.bible/v2/mcp` (v2 Worker, streamable HTTP) | unfoldingWord |
-| `fia` | `fia-mcp.unfoldingword.workers.dev/mcp` (auth token) | same | unfoldingWord |
-| `aquifer` | `aquifer.klappy.dev/mcp` | same | community (Klappy) |
-| `obs-5m` | not registered | `obs-5m-mcp.unfoldingword.workers.dev/mcp` | unfoldingWord |
-| `yaapi-bible` | not registered | `yaapi.bible/mcp` | third party |
-| `ptxprint-mcp` | not registered | `ptxprint-mcp.klappy.workers.dev/mcp`, disabled | out of scope |
+| Pool id             | Production                                           | Staging                                                          | Owner              |
+| ------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- | ------------------ |
+| `translation-helps` | `tc-helps.mcp.servant.bible/api/mcp` (v1, Pages)     | `tc-helps.mcp.servant.bible/v2/mcp` (v2 Worker, streamable HTTP) | unfoldingWord      |
+| `fia`               | `fia-mcp.unfoldingword.workers.dev/mcp` (auth token) | same                                                             | unfoldingWord      |
+| `aquifer`           | `aquifer.klappy.dev/mcp`                             | same                                                             | community (Klappy) |
+| `obs-5m`            | not registered                                       | `obs-5m-mcp.unfoldingword.workers.dev/mcp`                       | unfoldingWord      |
+| `yaapi-bible`       | not registered                                       | `yaapi.bible/mcp`                                                | third party        |
+| `ptxprint-mcp`      | not registered                                       | `ptxprint-mcp.klappy.workers.dev/mcp`, disabled                  | out of scope       |
 
 ## Consequences
 

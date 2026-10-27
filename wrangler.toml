@@ -1,0 +1,37 @@
+# Servant.Bible router Worker. One Worker owns the apex (ADR 0003).
+#
+# The top-level config IS production: the Deploy workflow runs `wrangler deploy`
+# with no `--env`. Staging is `[env.staging]`. Both deploy to workers.dev names
+# until #11 attaches the custom domains.
+name = "servant-bible"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+workers_dev = true
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[vars]
+ENVIRONMENT = "production"
+
+# The generated page (#9) is served from here. `run_worker_first` means the
+# Worker sees every request and decides when to hand one to the asset layer,
+# so routing lives in one place (ADR 0003, decision 4).
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+# ──── Staging environment ────
+[env.staging]
+name = "servant-bible-staging"
+workers_dev = true
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[env.staging.assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
