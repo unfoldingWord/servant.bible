@@ -49,7 +49,12 @@ A `server` that is `available` or `degraded` also has:
 
 `binding` names a Cloudflare service binding for a backend on the
 unfoldingWord account ([ADR 0003](adr/0003-one-router-worker-at-the-apex.md),
-decision 8); the router uses it when present. `auth: "bearer"` says consumers
+decision 8); the router uses it when present. The name must match a
+`[[services]]` binding in `wrangler.toml` (for both the top-level and the
+`[env.staging]` configuration), added in the same pull request; a binding
+named in the list but missing from the Worker answers `502`. The request still
+carries the full backend URL, so the bound Worker sees the same path it would
+over the public address. `auth: "bearer"` says consumers
 must send a bearer token; the router passes it through and never holds one
 (decision 7). For the same reason no URL in the file may carry credentials:
 the schema rejects `https://user:secret@host/...`, because the file is published
@@ -57,6 +62,17 @@ at `/mcp.json`.
 
 A `planned` or `retired` server may omit `versions` and `current`. A `dataset`
 never has them.
+
+## What the router forwards
+
+The router strips the Servant.Bible prefix (ADR 0003, decision 9). The prefix
+`/org/<org>/server/<server>/[<version>/]` stands for the directory that holds
+the backend's `/mcp`: with `backend` set to `https://h/api/mcp`,
+`/org/uw/server/x/mcp` reaches `https://h/api/mcp`, `/org/uw/server/x/mcp/sub`
+reaches `https://h/api/mcp/sub`, and `/org/uw/server/x/health` reaches
+`https://h/api/health`. The bare prefix is the endpoint. Put the server's
+`/health` and documentation next to its `/mcp` and they are reachable under
+its Servant.Bible path without any further configuration.
 
 ## Slug rules
 
