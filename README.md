@@ -32,6 +32,43 @@ than this page.
 
 The page built from the registry will live in this repository as well.
 
+## Addresses
+
+The router answers every address in
+[ADR 0002](docs/adr/0002-url-naming-convention.md). Forwarding is a proxy,
+never a redirect: method, body, and headers pass through, the response streams
+back, and the router holds no credentials
+([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).
+
+| Path                                           | Behaviour                                                                                                                                                           |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/org/<org>/server/<server>/mcp`               | Forwarded to the backend of the version marked `current`.                                                                                                           |
+| `/org/<org>/server/<server>/<version>/mcp`     | Forwarded to that version's backend.                                                                                                                                |
+| `/org/<org>/server/<server>/[<version>/]<any>` | Forwarded too. The prefix stands for the directory that holds the backend's `/mcp`, so a backend at `https://h/api/mcp` serves `/health` as `https://h/api/health`. |
+| `/s/<shorthand>[/<any>]`                       | Alias of the canonical prefix; `/s/<shorthand>` alone is the endpoint.                                                                                              |
+| `/mcp`                                         | A browser (`Accept: text/html`) gets the page; anything else gets the list as JSON.                                                                                 |
+| `/mcp.json`                                    | Always the list as JSON, with `$schema` pointing at `/servers.schema.json`.                                                                                         |
+| `/servers.schema.json`                         | The schema the list is checked against.                                                                                                                             |
+| `/`                                            | The page.                                                                                                                                                           |
+| `/health`                                      | The router's version, environment, and the number of servers it routes.                                                                                             |
+| `www.` host                                    | `308` to the same path on the apex.                                                                                                                                 |
+
+Which entries are routed follows the `status` field
+([ADR 0005](docs/adr/0005-the-list-carries-datasets-and-a-status.md)):
+`available` and `degraded` servers are forwarded, a `planned` server or a
+dataset answers `404` with a short JSON body saying why, a `retired` entry
+answers `410`, and an unknown org, server, version, or shorthand answers `404`.
+Nothing is ever forwarded on a guess.
+
+The router logs one structured line per forwarded request (`org`, `server`,
+`version`, method, upstream status, and milliseconds to the upstream headers)
+and never a request or response body.
+
+One `servers.json` serves both deployments. A merge to `main` deploys staging,
+so staging always runs the newest list; production follows when the Deploy
+workflow is dispatched. That is how a new server or version is proven on
+staging first (ADR 0003, decision 3).
+
 ## Development
 
 Requires Node 22 (`.nvmrc`) and pnpm.

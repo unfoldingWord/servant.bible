@@ -71,6 +71,15 @@ export default [
     },
   },
 
+  // The router's one structured line per forwarded request (#8) is written
+  // with console.log, which Workers Logs captures. Only this file may do so.
+  {
+    files: ['src/log.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
   {
     ignores: ['dist/', 'node_modules/', 'coverage/', '*.config.js', '*.config.ts', '.wrangler/'],
   },
