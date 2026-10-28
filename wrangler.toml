@@ -23,6 +23,23 @@ directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
 
+# Backends that are Workers on this account are reached by service binding
+# (ADR 0003, decision 8). The platform refuses a Worker's public fetch to
+# another Worker on the same account (error 1042), so these are required, not
+# an optimisation. The `binding` name is what a servers.json version names;
+# `service` is the Worker's name on the account. Keep [env.staging] in step.
+[[services]]
+binding = "TC_HELPS_V2"
+service = "translation-helps-mcp-v2"
+
+[[services]]
+binding = "OBS_5M"
+service = "obs-5m-mcp"
+
+[[services]]
+binding = "FIA"
+service = "fia-mcp"
+
 # ──── Staging environment ────
 [env.staging]
 name = "servant-bible-staging"
@@ -35,3 +52,15 @@ ENVIRONMENT = "staging"
 directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
+
+[[env.staging.services]]
+binding = "TC_HELPS_V2"
+service = "translation-helps-mcp-v2"
+
+[[env.staging.services]]
+binding = "OBS_5M"
+service = "obs-5m-mcp"
+
+[[env.staging.services]]
+binding = "FIA"
+service = "fia-mcp"

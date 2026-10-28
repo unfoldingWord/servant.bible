@@ -30,7 +30,8 @@
         },
         "v2": {
           "backend": "https://translation-helps-mcp-v2.unfoldingword.workers.dev/v2/mcp",
-          "transport": "streamable-http"
+          "transport": "streamable-http",
+          "binding": "TC_HELPS_V2"
         }
       }
     },
@@ -53,6 +54,7 @@
         "v1": {
           "backend": "https://fia-mcp.unfoldingword.workers.dev/mcp",
           "transport": "json-rpc",
+          "binding": "FIA",
           "auth": "bearer"
         }
       }
@@ -76,7 +78,8 @@
       "versions": {
         "v1": {
           "backend": "https://obs-5m-mcp.unfoldingword.workers.dev/mcp",
-          "transport": "streamable-http"
+          "transport": "streamable-http",
+          "binding": "OBS_5M"
         }
       }
     },
