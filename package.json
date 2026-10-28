@@ -1,6 +1,6 @@
 {
   "name": "servant-bible",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -34,7 +34,7 @@
     ]
   },
   "engines": {
-    "node": ">=22.0.0",
+    "node": "^22.22.1 || ^24.0.0 || >=26.0.0",
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.15.4",
@@ -52,9 +52,9 @@
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "semver": "^7.8.5",
-    "typescript": "~5.9.3",
+    "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",
-    "vitest": "^4.1.0",
+    "vitest": "^5.0.5",
     "wrangler": "^4.153.0"
   },
   "pnpm": {
