@@ -10,8 +10,16 @@
       "name": "Translation Helps",
       "description": "Door43 translation helps: Scripture, translation notes, translation words, and translation questions.",
       "purpose": "Agents that need unfoldingWord's translation helps for a passage, as BT Servant does.",
-      "operator": { "name": "unfoldingWord", "url": "https://unfoldingword.org" },
-      "sources": [{ "name": "Door43 Content Service (DCS)", "url": "https://git.door43.org" }],
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      },
+      "sources": [
+        {
+          "name": "Door43 Content Service (DCS)",
+          "url": "https://git.door43.org"
+        }
+      ],
       "repository": "https://github.com/unfoldingWord/translation-helps-mcp",
       "resources": ["bible", "translation-notes", "translation-words", "translation-questions"],
       "current": "v2",
@@ -30,12 +38,38 @@
       "kind": "server",
       "status": "available",
       "org": "uw",
+      "server": "fia",
+      "shorthand": "fia",
+      "name": "FIA Internalization",
+      "description": "FIA internalization materials by pericope: languages, books, pericopes, step renderings, media, and terms.",
+      "purpose": "Agents walking a translation team through internalizing a passage, as BT Servant does. Consumers send a bearer token; the router passes it through and holds none (ADR 0003, decision 7).",
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      },
+      "repository": "https://github.com/unfoldingWord/fia-mcp",
+      "current": "v1",
+      "versions": {
+        "v1": {
+          "backend": "https://fia-mcp.unfoldingword.workers.dev/mcp",
+          "transport": "json-rpc",
+          "auth": "bearer"
+        }
+      }
+    },
+    {
+      "kind": "server",
+      "status": "available",
+      "org": "uw",
       "server": "obs-5m",
       "shorthand": "obs-5m",
       "name": "Open Bible Stories and Five Movements",
       "description": "Open Bible Stories and the Five Movements.",
       "purpose": "Agents that need Open Bible Stories content and the Five Movements framework.",
-      "operator": { "name": "unfoldingWord", "url": "https://unfoldingword.org" },
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      },
       "repository": "https://github.com/unfoldingWord/obs-5m-mcp",
       "resources": ["bible-stories"],
       "current": "v1",
@@ -55,8 +89,15 @@
       "name": "Aquifer (community server)",
       "description": "Bible study resources from the Aquifer: dictionaries, study notes, and lexicons, served by a community-built MCP server.",
       "purpose": "Agents that need Aquifer study resources. This is the server BT Servant uses today; it holds the /s/aquifer shorthand (ADR 0004).",
-      "operator": { "name": "Klappy" },
-      "sources": [{ "name": "Aquifer", "url": "https://aquifer.bible" }],
+      "operator": {
+        "name": "Klappy"
+      },
+      "sources": [
+        {
+          "name": "Aquifer",
+          "url": "https://aquifer.bible"
+        }
+      ],
       "resources": ["dictionary", "study-notes", "lexicon"],
       "current": "v1",
       "versions": {
@@ -74,8 +115,16 @@
       "name": "Aquifer (official server)",
       "description": "Bible study resources from the Aquifer: dictionaries, study notes, translation guides, and lexicons, served by the Aquifer team's own MCP server, announced 2026-10-27.",
       "purpose": "Agents that need Aquifer study resources from the team that produces them. Listed side by side with the community server (ADR 0004).",
-      "operator": { "name": "The Aquifer team", "url": "https://aquifer.bible" },
-      "sources": [{ "name": "Aquifer", "url": "https://aquifer.bible" }],
+      "operator": {
+        "name": "The Aquifer team",
+        "url": "https://aquifer.bible"
+      },
+      "sources": [
+        {
+          "name": "Aquifer",
+          "url": "https://aquifer.bible"
+        }
+      ],
       "resources": ["dictionary", "study-notes", "lexicon"],
       "current": "v1",
       "versions": {
@@ -93,7 +142,10 @@
       "name": "Bible Passages (BPd)",
       "description": "Open Bible Stories and every passage in the Bible, organized by book and passage title, with the chapter and verse range as secondary information.",
       "purpose": "The template library in translationCore Mobile v2, starting with the top 10 Strategic Languages, and finding a place in the story without book, chapter, and verse.",
-      "operator": { "name": "unfoldingWord", "url": "https://unfoldingword.org" }
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      }
     },
     {
       "kind": "dataset",
@@ -103,7 +155,10 @@
       "name": "Strategic Languages",
       "description": "The list of Strategic Languages and its data.",
       "purpose": "A permanent, official home for the list, which the Bible Passages dataset and other work depend on.",
-      "operator": { "name": "unfoldingWord", "url": "https://unfoldingword.org" }
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      }
     },
     {
       "kind": "dataset",
@@ -113,10 +168,19 @@
       "name": "Language and Bible publishing data",
       "description": "Language data from Glottolog, the public Ethnologue, and the Registry of Language Variants, with available Bible publishing data.",
       "purpose": "Tools like BT Servant answering questions about a language, such as which languages are spoken in a place and what has been published in them.",
-      "operator": { "name": "unfoldingWord", "url": "https://unfoldingword.org" },
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      },
       "sources": [
-        { "name": "Glottolog", "url": "https://glottolog.org" },
-        { "name": "Ethnologue", "url": "https://www.ethnologue.com" }
+        {
+          "name": "Glottolog",
+          "url": "https://glottolog.org"
+        },
+        {
+          "name": "Ethnologue",
+          "url": "https://www.ethnologue.com"
+        }
       ]
     },
     {
@@ -127,7 +191,10 @@
       "name": "Read-n-Grow picture Bible",
       "description": "About 2,000 Read-n-Grow picture Bible images, about 600 of them used in Open Bible Stories, tagged with the passage each illustrates and the elements shown.",
       "purpose": "Tools that need the right image for a passage.",
-      "operator": { "name": "unfoldingWord", "url": "https://unfoldingword.org" },
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      },
       "resources": ["media"]
     },
     {
@@ -138,10 +205,19 @@
       "name": "Bibles",
       "description": "Open-licensed Bible texts in many languages.",
       "purpose": "Translation workflows that need the real Scripture text for a verse in the target language instead of a fresh translation of the English.",
-      "operator": { "name": "unfoldingWord", "url": "https://unfoldingword.org" },
+      "operator": {
+        "name": "unfoldingWord",
+        "url": "https://unfoldingword.org"
+      },
       "sources": [
-        { "name": "eBible", "url": "https://ebible.org" },
-        { "name": "Door43 Content Service (DCS)", "url": "https://git.door43.org" }
+        {
+          "name": "eBible",
+          "url": "https://ebible.org"
+        },
+        {
+          "name": "Door43 Content Service (DCS)",
+          "url": "https://git.door43.org"
+        }
       ],
       "resources": ["bible"]
     }
