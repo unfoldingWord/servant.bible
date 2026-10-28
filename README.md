@@ -19,17 +19,18 @@ than this page.
 
 ## What is in this repository
 
-| Path                   | Contents                                                                                           |
-| ---------------------- | -------------------------------------------------------------------------------------------------- |
-| [`docs/`](docs/)       | Documentation, starting with the [decision records](docs/README.md).                               |
-| [`src/`](src/)         | The router Worker that owns the apex ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)). |
-| [`public/`](public/)   | Static assets the Worker serves; the generated page will land here.                                |
-| [`tests/`](tests/)     | Vitest tests that run inside the Workers runtime.                                                  |
-| [`.github/`](.github/) | CI on every pull request, deployments from CI, Dependabot.                                         |
-| Issues                 | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list.    |
+| Path                                         | Contents                                                                                                                                                                                                                     |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`servers.json`](servers.json)               | The registry: every server and dataset, with its backends, operator, and status ([ADR 0005](docs/adr/0005-the-list-carries-datasets-and-a-status.md)). To add one, see [`docs/adding-a-server.md`](docs/adding-a-server.md). |
+| [`servers.schema.json`](servers.schema.json) | The JSON Schema that `pnpm validate:servers` checks the registry against, in the pre-commit hook and in CI.                                                                                                                  |
+| [`docs/`](docs/)                             | Documentation, starting with the [decision records](docs/README.md).                                                                                                                                                         |
+| [`src/`](src/)                               | The router Worker that owns the apex ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).                                                                                                                           |
+| [`public/`](public/)                         | Static assets the Worker serves; the generated page will land here.                                                                                                                                                          |
+| [`tests/`](tests/)                           | Vitest tests: `unit/` runs inside the Workers runtime, `node/` covers the dev-time scripts.                                                                                                                                  |
+| [`.github/`](.github/)                       | CI on every pull request, deployments from CI, Dependabot.                                                                                                                                                                   |
+| Issues                                       | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list.                                                                                                                              |
 
-The list of servers, and the page built from it, will live in this repository
-as well.
+The page built from the registry will live in this repository as well.
 
 ## Development
 
@@ -38,7 +39,8 @@ Requires Node 22 (`.nvmrc`) and pnpm.
 ```sh
 pnpm install
 pnpm dev            # wrangler dev on localhost:8787
-pnpm test           # Vitest in the Workers runtime
+pnpm test           # Vitest: tests/unit in the Workers runtime, tests/node under Node
+pnpm validate:servers  # servers.json against servers.schema.json
 pnpm lint           # ESLint on src/, tests/, scripts/
 pnpm format:check   # Prettier
 pnpm check          # tsc

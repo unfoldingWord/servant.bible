@@ -1,6 +1,6 @@
 {
   "name": "servant-bible",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -22,6 +22,7 @@
     "check": "tsc --noEmit && tsc --noEmit --project tests/tsconfig.json",
     "audit:prod": "node scripts/audit-prod.mjs",
     "audit:all": "node scripts/audit-prod.mjs --include-dev --audit-level=high",
+    "validate:servers": "node scripts/validate-servers.mjs",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -44,6 +45,8 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^22",
     "@types/semver": "^7.8.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-security": "^4.2.0",

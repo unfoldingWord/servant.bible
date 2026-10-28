@@ -19,6 +19,9 @@ when one does not, find the ADRs that apply anyway. In short:
   list is its configuration. It proxies, never redirects, and holds no secrets.
 - **ADR 0004**: a server earns an address by being listed and fronted, not by
   being re-hosted.
+- **ADR 0005**: the list holds servers and datasets, each with a `kind` and a
+  `status`; nothing listed is hidden; `purpose` and `sources` are per entry;
+  the file is JSON, checked against `servers.schema.json` in CI.
 
 A new decision is a new ADR plus a row in `docs/README.md`, never a comment in
 code or an issue. If an issue and an ADR disagree, stop and raise it.
@@ -76,9 +79,9 @@ the merge, CI tags `main` with `v<version>` (`.github/workflows/tag.yml`).
 
 The gates are ESLint (with the function length, statement, complexity, depth,
 callback, and parameter caps in `eslint.config.js`), Prettier, `tsc`, Vitest in
-the Workers runtime, the build, the two-layer dependency audit, and, once #7
-lands, the `servers.json` schema check. They run in the pre-commit hook and in
-CI on `src/`, `tests/`, and `scripts/` alike.
+the Workers runtime, the build, the two-layer dependency audit, and the
+`servers.json` schema check (`pnpm validate:servers`). They run in the
+pre-commit hook and in CI on `src/`, `tests/`, and `scripts/` alike.
 
 Never: add `eslint-disable`, raise a cap, add `|| true`, change an audit
 threshold, skip a hook, or exclude a path. A vulnerable transitive dependency
