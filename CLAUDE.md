@@ -41,7 +41,8 @@ refused, and the rules apply to administrators too.
 - **Production** deploys only by manual dispatch of the Deploy workflow
   (`.github/workflows/deploy.yml`), never automatically.
 
-Both report their version at `/health`. Verify a deploy with one request there.
+Both report their version at `/health`: `staging.servant.bible/health` and
+`servant.bible/health`. Verify a deploy with one request there.
 
 ## Never merge without review
 

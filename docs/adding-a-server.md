@@ -17,9 +17,9 @@ no second place to register it.
    in CI, so an invalid entry cannot be merged.
 4. Open a pull request. Say who operates the server and link the proof that
    its backend answers an MCP `initialize` and `tools/list`.
-5. After the merge, the staging router serves the entry first
-   ([ADR 0003](adr/0003-one-router-worker-at-the-apex.md), decision 3). Production
-   follows by manual deploy.
+5. After the merge, the staging router at `staging.servant.bible` serves the
+   entry first ([ADR 0003](adr/0003-one-router-worker-at-the-apex.md),
+   decision 3). Production at `servant.bible` follows by manual deploy.
 
 ## Fields
 
