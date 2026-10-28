@@ -58,6 +58,9 @@ jobs:
       - name: Run ESLint
         run: pnpm run lint
 
+      - name: Validate servers.json
+        run: pnpm run validate:servers
+
   typecheck:
     name: Type Check
     needs: [security-audit]

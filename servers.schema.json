@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://servant.bible/servers.schema.json",
+  "title": "Servant.Bible registry",
+  "description": "The shape of servers.json, the one file that drives the page, the router, and /mcp.json. The rules behind each field are decisions: ADR 0002 (slugs, versions, shorthand), ADR 0003 (backends, bindings), ADR 0004 (operator), ADR 0005 (kind, status, purpose, sources). How to add an entry: docs/adding-a-server.md. Three rules live in scripts/validate-servers.mjs because JSON Schema cannot express them: org+server unique, shorthand unique, current names a version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entries"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "httpsUrl": {
+      "description": "An https URL with no userinfo: servers.json is published at /mcp.json, so a credential in a URL would be published too (ADR 0003, decision 7).",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://[^/?#@]+(?:[/?#].*)?$"
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/text" },
+        "url": { "$ref": "#/$defs/httpsUrl" },
+        "contact": { "$ref": "#/$defs/text" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "url"],
+      "properties": {
+        "name": { "$ref": "#/$defs/text" },
+        "url": { "$ref": "#/$defs/httpsUrl" }
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend", "transport"],
+      "properties": {
+        "backend": { "$ref": "#/$defs/httpsUrl" },
+        "transport": { "enum": ["json-rpc", "streamable-http"] },
+        "binding": { "$ref": "#/$defs/text" },
+        "auth": { "enum": ["bearer"] }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "status", "org", "server", "name", "description", "purpose", "operator"],
+      "properties": {
+        "kind": { "enum": ["server", "dataset"] },
+        "status": { "enum": ["available", "planned", "degraded", "retired"] },
+        "org": { "$ref": "#/$defs/slug" },
+        "server": { "$ref": "#/$defs/slug" },
+        "shorthand": { "$ref": "#/$defs/slug" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "$ref": "#/$defs/text" },
+        "purpose": { "$ref": "#/$defs/text" },
+        "operator": { "$ref": "#/$defs/operator" },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/source" }
+        },
+        "repository": { "$ref": "#/$defs/httpsUrl" },
+        "resources": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "bible",
+              "bible-stories",
+              "dictionary",
+              "lexicon",
+              "media",
+              "study-notes",
+              "translation-academy",
+              "translation-notes",
+              "translation-questions",
+              "translation-words"
+            ]
+          }
+        },
+        "current": { "$ref": "#/$defs/text" },
+        "versions": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^v[0-9]+$" },
+          "additionalProperties": { "$ref": "#/$defs/version" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "required": ["kind", "status"],
+            "properties": {
+              "kind": { "const": "server" },
+              "status": { "enum": ["available", "degraded"] }
+            }
+          },
+          "then": {
+            "type": "object",
+            "required": ["current", "versions"],
+            "properties": { "current": true, "versions": true }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {
+              "kind": { "const": "dataset" }
+            }
+          },
+          "then": {
+            "type": "object",
+            "properties": { "current": false, "versions": false }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -8,6 +8,9 @@ npx lint-staged
 echo "Running type checks..."
 pnpm run check
 
+echo "Validating servers.json..."
+pnpm run validate:servers
+
 echo "Running tests..."
 pnpm run test
 
