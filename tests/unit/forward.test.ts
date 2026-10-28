@@ -188,8 +188,9 @@ describe('service bindings (ADR 0003, decision 8)', () => {
     expect(seen.body).toBe(RPC);
   });
 
-  it('answers 502 and logs when the named binding is not configured', async () => {
+  it('answers 502, logs the error, and still writes the structured line', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const unbound: ForwardDeps = { ...deps, binding: () => undefined };
     const request = new Request('https://servant.bible/org/uw/server/bound/mcp');
 
@@ -202,12 +203,24 @@ describe('service bindings (ADR 0003, decision 8)', () => {
     });
     expect(error).toHaveBeenCalledOnce();
     expect(error.mock.calls[0]?.[0]).toContain('BOUND');
+    expect(log).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
+      event: 'forward',
+      org: 'uw',
+      server: 'bound',
+      version: 'v1',
+      method: 'GET',
+      upstream_status: 502,
+      error: 'binding not configured',
+      duration_ms: expect.any(Number),
+    });
   });
 });
 
 describe('failures and the log line', () => {
-  it('answers 502 and logs when the backend cannot be reached', async () => {
+  it('answers 502, logs the error, and still writes the structured line', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const broken: ForwardDeps = {
       ...deps,
       fetch: () => Promise.reject(new Error('connect failed')),
@@ -219,6 +232,16 @@ describe('failures and the log line', () => {
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ error: 'bad gateway', reason: 'upstream unreachable' });
     expect(error.mock.calls[0]?.[0]).toContain('connect failed');
+    expect(log).toHaveBeenCalledOnce();
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
+      event: 'forward',
+      org: 'uw',
+      server: 'alpha',
+      version: 'v2',
+      upstream_status: 502,
+      error: 'upstream unreachable',
+      duration_ms: expect.any(Number),
+    });
   });
 
   it('logs one structured line per forwarded request, without the body', async () => {
@@ -237,6 +260,7 @@ describe('failures and the log line', () => {
       upstream_status: 200,
     });
     expect(JSON.parse(line).duration_ms).toBeTypeOf('number');
+    expect(JSON.parse(line)).not.toHaveProperty('error');
     expect(line).not.toContain('tools/list');
   });
 });

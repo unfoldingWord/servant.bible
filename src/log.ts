@@ -14,6 +14,8 @@ export interface ForwardLine {
   upstream_status: number;
   /** Time to the upstream response headers; a streamed body finishes later. */
   duration_ms: number;
+  /** Present when the router generated the 502 itself: why the backend was not reached. */
+  error?: string;
 }
 
 export function logForward(line: ForwardLine): void {

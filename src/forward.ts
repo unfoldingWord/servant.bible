@@ -94,27 +94,37 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export async function forward(
-  request: Request,
-  target: Target,
-  deps: ForwardDeps
-): Promise<Response> {
+/** The backend's response, or a 502 the router generated with the reason why. */
+type Attempt = { response: Response; error?: string };
+
+async function attempt(request: Request, target: Target, deps: ForwardDeps): Promise<Attempt> {
   const where = `${target.org}/${target.server} ${target.versionKey}`;
   const send = sender(target, deps);
   if (send === undefined) {
     console.error(
       `forward: binding "${target.version.binding}" named by ${where} is not configured`
     );
-    return badGateway('binding not configured');
+    return { response: badGateway('binding not configured'), error: 'binding not configured' };
   }
-  const started = Date.now();
-  let response: Response;
   try {
-    response = await send(upstreamRequest(request, target));
+    return { response: await send(upstreamRequest(request, target)) };
   } catch (error) {
     console.error(`forward: ${where} unreachable: ${describe(error)}`);
-    return badGateway('upstream unreachable');
+    return { response: badGateway('upstream unreachable'), error: 'upstream unreachable' };
   }
+}
+
+/**
+ * Every attempt, including a 502 the router generated, writes the structured
+ * line, so request counts and error rates per server cover outages too.
+ */
+export async function forward(
+  request: Request,
+  target: Target,
+  deps: ForwardDeps
+): Promise<Response> {
+  const started = Date.now();
+  const { response, error } = await attempt(request, target, deps);
   logForward({
     org: target.org,
     server: target.server,
@@ -122,6 +132,7 @@ export async function forward(
     method: request.method,
     upstream_status: response.status,
     duration_ms: Date.now() - started,
+    ...(error === undefined ? {} : { error }),
   });
-  return clientResponse(response);
+  return error === undefined ? clientResponse(response) : response;
 }
