@@ -51,7 +51,9 @@ A `server` that is `available` or `degraded` also has:
 unfoldingWord account ([ADR 0003](adr/0003-one-router-worker-at-the-apex.md),
 decision 8); the router uses it when present. `auth: "bearer"` says consumers
 must send a bearer token; the router passes it through and never holds one
-(decision 7).
+(decision 7). For the same reason no URL in the file may carry credentials:
+the schema rejects `https://user:secret@host/...`, because the file is published
+at `/mcp.json`.
 
 A `planned` or `retired` server may omit `versions` and `current`. A `dataset`
 never has them.

@@ -150,6 +150,51 @@ describe('required fields and enums', () => {
   });
 });
 
+describe('URLs never carry credentials (the file is published at /mcp.json)', () => {
+  const WITH_USERINFO = 'https://user:secret@example.org/mcp';
+  const WITH_USER_ONLY = 'https://user@example.org/mcp';
+
+  it('rejects a backend with userinfo and names the path', () => {
+    const entry = baseServer({
+      versions: { v1: { backend: WITH_USERINFO, transport: 'json-rpc' } },
+    });
+    const errors = errorsFor([entry]);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('/entries/0/versions/v1/backend');
+  });
+
+  it('rejects a backend with a bare user name', () => {
+    const entry = baseServer({
+      versions: { v1: { backend: WITH_USER_ONLY, transport: 'json-rpc' } },
+    });
+    expect(errorsFor([entry])).toHaveLength(1);
+  });
+
+  it('rejects userinfo in repository, operator url, and source url', () => {
+    expect(errorsFor([baseServer({ repository: WITH_USERINFO })])).toHaveLength(1);
+    expect(errorsFor([baseServer({ operator: { name: 'x', url: WITH_USERINFO } })])).toHaveLength(
+      1
+    );
+    expect(errorsFor([baseServer({ sources: [{ name: 'x', url: WITH_USERINFO }] })])).toHaveLength(
+      1
+    );
+  });
+
+  it('still accepts an @ in the path or query, which is not userinfo', () => {
+    const entry = baseServer({
+      versions: { v1: { backend: 'https://example.org/mcp/@v2?u=a@b', transport: 'json-rpc' } },
+    });
+    expect(errorsFor([entry])).toEqual([]);
+  });
+
+  it('still accepts a host with a port', () => {
+    const entry = baseServer({
+      versions: { v1: { backend: 'https://example.org:8443/mcp', transport: 'json-rpc' } },
+    });
+    expect(errorsFor([entry])).toEqual([]);
+  });
+});
+
 describe('versions', () => {
   it('rejects an available server with no versions', () => {
     const errors = errorsFor([withoutKey(withoutKey(baseServer(), 'versions'), 'current')]);

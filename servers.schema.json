@@ -25,9 +25,10 @@
       "minLength": 1
     },
     "httpsUrl": {
+      "description": "An https URL with no userinfo: servers.json is published at /mcp.json, so a credential in a URL would be published too (ADR 0003, decision 7).",
       "type": "string",
       "format": "uri",
-      "pattern": "^https://"
+      "pattern": "^https://[^/?#@]+(?:[/?#].*)?$"
     },
     "operator": {
       "type": "object",
