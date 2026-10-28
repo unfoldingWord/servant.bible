@@ -49,12 +49,19 @@ A `server` that is `available` or `degraded` also has:
 
 `binding` names a Cloudflare service binding for a backend on the
 unfoldingWord account ([ADR 0003](adr/0003-one-router-worker-at-the-apex.md),
-decision 8); the router uses it when present. The name must match a
-`[[services]]` binding in `wrangler.toml` (for both the top-level and the
-`[env.staging]` configuration), added in the same pull request; a binding
-named in the list but missing from the Worker answers `502`. The request still
-carries the full backend URL, so the bound Worker sees the same path it would
-over the public address. `auth: "bearer"` says consumers
+decision 8). It is **required for a backend that is a Worker on the account**
+(a `*.unfoldingword.workers.dev` address): the platform refuses a Worker's
+public fetch to another Worker on the same account with Cloudflare error 1042,
+so without a binding the entry answers 404 through the router. A Pages
+project on the account (`*.pages.dev`) and any backend elsewhere are reached by
+their public address. The name must match a `[[services]]` binding in
+`wrangler.toml` (both the top-level and the `[env.staging]` configuration),
+added in the same pull request, and a stub Worker of the same name in
+`vitest.config.ts` so the tests can prove the chain; `tests/unit/bindings.test.ts`
+fails otherwise. A binding named in the list but missing from the Worker
+answers `502`. The request still carries the full backend URL, so the bound
+Worker sees the same path it would over the public address. `auth: "bearer"`
+says consumers
 must send a bearer token; the router passes it through and never holds one
 (decision 7). For the same reason no URL in the file may carry credentials:
 the schema rejects `https://user:secret@host/...`, because the file is published
