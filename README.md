@@ -35,7 +35,9 @@ The page built from the registry will live in this repository as well.
 ## Addresses
 
 The router answers every address in
-[ADR 0002](docs/adr/0002-url-naming-convention.md). Forwarding is a proxy,
+[ADR 0002](docs/adr/0002-url-naming-convention.md) on `https://servant.bible`
+(production) and `https://staging.servant.bible` (staging), with
+`www.servant.bible` redirecting to the apex. Forwarding is a proxy,
 never a redirect: method, body, and headers pass through, the response streams
 back, and the router holds no credentials
 ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).
@@ -88,15 +90,22 @@ pnpm audit:all      # full tree, high or critical fails
 
 The pre-commit hook runs the same gates. CI runs them on every pull request.
 
-Deployments run from CI only. A merge to `main` deploys staging; production
-deploys by manual dispatch of the Deploy workflow. Each deployment reports its
-version at `/health`. See [`CLAUDE.md`](CLAUDE.md) for the rules every
-contributor and agent follows here.
+Deployments run from CI only. A merge to `main` deploys staging to
+`staging.servant.bible`; production deploys to `servant.bible` by manual
+dispatch of the Deploy workflow. Both are Workers Custom Domains declared in
+`wrangler.toml`, and `tests/node/wrangler-config.test.ts` pins which names each
+deployment owns. The `workers.dev` names of both deployments stay on as
+fallbacks for now. Each deployment reports its version at `/health`. See
+[`CLAUDE.md`](CLAUDE.md) for the rules every contributor and agent follows
+here.
 
 ## Related repositories
 
-- [translation-helps-mcp](https://github.com/unfoldingWord/translation-helps-mcp)
-- [fia-mcp](https://github.com/unfoldingWord/fia-mcp)
-- [obs-5m-mcp](https://github.com/unfoldingWord/obs-5m-mcp)
+- [translation-helps-mcp](https://github.com/unfoldingWord/translation-helps-mcp),
+  served at `servant.bible/org/uw/server/tc-helps/mcp` (`/s/tc-helps`)
+- [fia-mcp](https://github.com/unfoldingWord/fia-mcp), served at
+  `servant.bible/org/uw/server/fia/mcp` (`/s/fia`)
+- [obs-5m-mcp](https://github.com/unfoldingWord/obs-5m-mcp), served at
+  `servant.bible/org/uw/server/obs-5m/mcp` (`/s/obs-5m`)
 - [bt-servant-worker](https://github.com/unfoldingWord/bt-servant-worker), the
   main consumer of these servers today

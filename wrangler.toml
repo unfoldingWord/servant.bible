@@ -1,12 +1,24 @@
 # Servant.Bible router Worker. One Worker owns the apex (ADR 0003).
 #
 # The top-level config IS production: the Deploy workflow runs `wrangler deploy`
-# with no `--env`. Staging is `[env.staging]`. Both deploy to workers.dev names
-# until #11 attaches the custom domains.
+# with no `--env`. Staging is `[env.staging]`. Production answers on
+# `servant.bible` and `www.servant.bible`, staging on `staging.servant.bible`,
+# all as Workers Custom Domains (#11). The workers.dev names stay on as
+# fallbacks for now; `workers_dev` must be explicit because declaring routes
+# flips its default to false.
 name = "servant-bible"
 main = "src/index.ts"
 compatibility_date = "2026-08-01"
 workers_dev = true
+
+# Custom Domains, created by `wrangler deploy` itself: the deploy replaces any
+# conflicting DNS record for these names at the moment it attaches. The router
+# answers `www.` with a 308 to the apex (ADR 0002), so www is attached here
+# rather than redirected by a dashboard rule.
+routes = [
+  { pattern = "servant.bible", custom_domain = true },
+  { pattern = "www.servant.bible", custom_domain = true },
+]
 
 [observability]
 enabled = true
@@ -44,6 +56,11 @@ service = "fia-mcp"
 [env.staging]
 name = "servant-bible-staging"
 workers_dev = true
+
+# `routes` is inheritable: without its own, staging would inherit the
+# production domains above and the staging deploy would try to take the apex.
+# tests/node/wrangler-config.test.ts pins which names each deployment owns.
+routes = [{ pattern = "staging.servant.bible", custom_domain = true }]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
