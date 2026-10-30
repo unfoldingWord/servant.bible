@@ -75,11 +75,15 @@ function health(deps: RouterDeps, env: Env): Response {
 
 /**
  * The page, behind the gate (ADR 0006), fetched from the asset layer as `/`
- * whatever the request path was.
+ * whatever the request path was, with the method kept so HEAD stays HEAD.
+ * Callers apply `readOnly` first: a write is refused before the credential
+ * is looked at, and never turned into a GET.
  */
 function page(env: Env, request: Request, url: URL): Promise<Response> {
   return gated(env, request, () =>
-    env.ASSETS.fetch(new Request(new URL('/', url), { headers: request.headers }))
+    env.ASSETS.fetch(
+      new Request(new URL('/', url), { method: request.method, headers: request.headers })
+    )
   );
 }
 
@@ -119,7 +123,7 @@ export function createRouter(deps: RouterDeps): Router {
       const route = parseRoute(url.pathname);
       switch (route.kind) {
         case 'page':
-          return page(env, request, url);
+          return readOnly(request, () => page(env, request, url));
         case 'health':
           return readOnly(request, () => health(deps, env));
         case 'schema':

@@ -106,6 +106,35 @@ describe('the page gate refuses everything but the credential (ADR 0006)', () =>
 
     expect(response.status).toBe(401);
   });
+});
+
+describe('the page keeps its GET and HEAD only contract behind the gate (ADR 0006)', () => {
+  it('serves HEAD / to the right credential as HEAD: headers, no body', async () => {
+    const response = await router.fetch(
+      new Request('https://servant.bible/', {
+        method: 'HEAD',
+        headers: { ...BROWSER, authorization: basic(USERNAME, PASSWORD) },
+      }),
+      gated
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(await response.text()).toBe('');
+  });
+
+  it('refuses a write to / with 405 before looking at any credential', async () => {
+    for (const authorization of [basic(USERNAME, PASSWORD), undefined]) {
+      const headers = authorization ? { ...BROWSER, authorization } : BROWSER;
+      const response = await router.fetch(
+        new Request('https://servant.bible/', { method: 'POST', headers, body: '{}' }),
+        gated
+      );
+      expect(response.status).toBe(405);
+      expect(response.headers.get('allow')).toBe('GET, HEAD');
+      expect(response.headers.get('www-authenticate')).toBeNull();
+    }
+  });
 
   it('fails closed with 503 when the credential is not configured', async () => {
     const response = await get('/', unconfigured, {
