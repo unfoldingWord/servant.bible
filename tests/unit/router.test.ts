@@ -12,7 +12,12 @@ const SCHEMA = { $id: SCHEMA_URL, title: 'fixture schema' };
 
 const router = createRouter({ registry: fixtureRegistry, schema: SCHEMA, fetch: (r) => echo(r) });
 
-const testEnv: Env = { ...(env as unknown as Env), BOUND: echoBinding() };
+// The page credential (ADR 0006) is a Worker secret, so wrangler.toml never
+// carries it; the tests supply one. gate.test.ts covers the gate itself.
+const PAGE = { PAGE_USERNAME: 'reader', PAGE_PASSWORD: 'fixture-password' };
+const PAGE_AUTH = { authorization: `Basic ${btoa('reader:fixture-password')}` };
+
+const testEnv: Env = { ...(env as unknown as Env), BOUND: echoBinding(), ...PAGE };
 
 function get(path: string, init?: RequestInit): Promise<Response> {
   return router.fetch(new Request(`https://servant.bible${path}`, init), testEnv);
@@ -36,8 +41,10 @@ describe('www.servant.bible (ADR 0002)', () => {
 });
 
 describe('/mcp and /mcp.json', () => {
-  it('gives a browser the page', async () => {
-    const response = await get('/mcp', { headers: { accept: 'text/html,application/xhtml+xml' } });
+  it('gives a browser with the page credential the page', async () => {
+    const response = await get('/mcp', {
+      headers: { accept: 'text/html,application/xhtml+xml', ...PAGE_AUTH },
+    });
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/html');

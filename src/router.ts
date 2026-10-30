@@ -1,4 +1,5 @@
 import { forward } from './forward.js';
+import { gated, type GateEnv } from './gate.js';
 import { APP_VERSION } from './generated/version.js';
 import { json } from './http.js';
 import { listBody, wantsHtml } from './list.js';
@@ -13,7 +14,7 @@ import { parseRoute, type ServerRoute, type ShorthandRoute } from './routes.js';
  * index.ts builds the real one from servers.json.
  */
 
-export interface Env {
+export interface Env extends GateEnv {
   ASSETS: Fetcher;
   ENVIRONMENT: string;
   /** Service bindings named by `binding` in servers.json (ADR 0003, decision 8). */
@@ -72,9 +73,14 @@ function health(deps: RouterDeps, env: Env): Response {
   });
 }
 
-/** The page, fetched from the asset layer as `/` whatever the request path was. */
+/**
+ * The page, behind the gate (ADR 0006), fetched from the asset layer as `/`
+ * whatever the request path was.
+ */
 function page(env: Env, request: Request, url: URL): Promise<Response> {
-  return env.ASSETS.fetch(new Request(new URL('/', url), { headers: request.headers }));
+  return gated(env, request, () =>
+    env.ASSETS.fetch(new Request(new URL('/', url), { headers: request.headers }))
+  );
 }
 
 function list(
@@ -113,7 +119,7 @@ export function createRouter(deps: RouterDeps): Router {
       const route = parseRoute(url.pathname);
       switch (route.kind) {
         case 'page':
-          return env.ASSETS.fetch(request);
+          return page(env, request, url);
         case 'health':
           return readOnly(request, () => health(deps, env));
         case 'schema':

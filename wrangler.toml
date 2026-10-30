@@ -27,6 +27,11 @@ head_sampling_rate = 1
 [vars]
 ENVIRONMENT = "production"
 
+# The page credential (ADR 0006), PAGE_USERNAME and PAGE_PASSWORD, is a pair of
+# Worker secrets that the deploy workflows set from GitHub repository secrets.
+# It never appears here: a value in [vars] would be committed, and a missing
+# one makes the page fail closed (503), never open.
+
 # The generated page (#9) is served from here. `run_worker_first` means the
 # Worker sees every request and decides when to hand one to the asset layer,
 # so routing lives in one place (ADR 0003, decision 4).

@@ -10,6 +10,7 @@ architecture decision records, one numbered file per decision. Read them in orde
 | [0003](adr/0003-one-router-worker-at-the-apex.md)          | One router Worker at the apex: move the nameservers to Cloudflare, proxy not redirect, the server list as router config, staging                      |
 | [0004](adr/0004-hosting-agnostic-registry.md)              | Servant.Bible is a hosting-agnostic registry: "moving" a server means listing and fronting it, not re-hosting; Aquifer fronts Klappy's server for now |
 | [0005](adr/0005-the-list-carries-datasets-and-a-status.md) | The list carries datasets and a status: `kind` and `status` per entry, `purpose` and `sources`, nothing hidden, JSON validated in CI                  |
+| [0006](adr/0006-the-page-behind-a-shared-password.md)      | The page is behind a shared password, nothing else is: Basic auth on `/` and the HTML view of `/mcp`, one secret pair per environment, fails closed   |
 
 To add a server or dataset to the registry, follow
 [`adding-a-server.md`](adding-a-server.md).
