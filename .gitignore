@@ -5,3 +5,5 @@ dist
 .DS_Store
 .dev.vars
 .claude/
+# Generated from servers.json by scripts/generate-page.mjs on every build (#9).
+public/index.html

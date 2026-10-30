@@ -25,12 +25,13 @@ than this page.
 | [`servers.schema.json`](servers.schema.json) | The JSON Schema that `pnpm validate:servers` checks the registry against, in the pre-commit hook and in CI.                                                                                                                  |
 | [`docs/`](docs/)                             | Documentation, starting with the [decision records](docs/README.md).                                                                                                                                                         |
 | [`src/`](src/)                               | The router Worker that owns the apex ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).                                                                                                                           |
-| [`public/`](public/)                         | Static assets the Worker serves; the generated page will land here.                                                                                                                                                          |
+| [`public/`](public/)                         | Static assets the Worker serves. `index.html` is generated from `servers.json` on every build (`pnpm generate:page`) and is not committed.                                                                                   |
 | [`tests/`](tests/)                           | Vitest tests: `unit/` runs inside the Workers runtime, `node/` covers the dev-time scripts.                                                                                                                                  |
 | [`.github/`](.github/)                       | CI on every pull request, deployments from CI, Dependabot.                                                                                                                                                                   |
 | Issues                                       | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list.                                                                                                                              |
 
-The page built from the registry will live in this repository as well.
+The page at `/` is built from the registry on every build, so it can never
+disagree with the router that serves it.
 
 ## Addresses
 
@@ -54,7 +55,7 @@ address a program calls, `/mcp.json` included, is open.
 | `/mcp`                                         | A browser (`Accept: text/html`) gets the page; anything else gets the list as JSON.                                                                                 |
 | `/mcp.json`                                    | Always the list as JSON, with `$schema` pointing at `/servers.schema.json`.                                                                                         |
 | `/servers.schema.json`                         | The schema the list is checked against.                                                                                                                             |
-| `/`                                            | The page.                                                                                                                                                           |
+| `/`                                            | The page, generated from `servers.json`.                                                                                                                            |
 | `/health`                                      | The router's version, environment, and the number of servers it routes.                                                                                             |
 | `www.` host                                    | `308` to the same path on the apex.                                                                                                                                 |
 
@@ -83,6 +84,7 @@ pnpm install
 pnpm dev            # wrangler dev on localhost:8787
 pnpm test           # Vitest: tests/unit in the Workers runtime, tests/node under Node
 pnpm validate:servers  # servers.json against servers.schema.json
+pnpm generate:page  # servers.json -> public/index.html; runs before dev, test, and build
 pnpm lint           # ESLint on src/, tests/, scripts/
 pnpm format:check   # Prettier
 pnpm check          # tsc

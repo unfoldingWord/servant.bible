@@ -82,10 +82,11 @@ describe('base fixtures', () => {
     expect(errorsFor([planned])).toEqual([]);
   });
 
-  it('accepts optional fields: sources, repository, resources, binding, auth', () => {
+  it('accepts optional fields: sources, repository, documentation, resources, binding, auth', () => {
     const entry = baseServer({
       sources: [{ name: 'Door43 Content Service', url: 'https://git.door43.org' }],
       repository: 'https://github.com/unfoldingWord/translation-helps-mcp',
+      documentation: 'https://docs.example.org/translation-helps',
       resources: ['bible', 'translation-notes'],
       versions: {
         v1: { backend: BACKEND, transport: 'streamable-http', binding: 'TC_HELPS', auth: 'bearer' },
@@ -170,8 +171,9 @@ describe('URLs never carry credentials (the file is published at /mcp.json)', ()
     expect(errorsFor([entry])).toHaveLength(1);
   });
 
-  it('rejects userinfo in repository, operator url, and source url', () => {
+  it('rejects userinfo in repository, documentation, operator url, and source url', () => {
     expect(errorsFor([baseServer({ repository: WITH_USERINFO })])).toHaveLength(1);
+    expect(errorsFor([baseServer({ documentation: WITH_USERINFO })])).toHaveLength(1);
     expect(errorsFor([baseServer({ operator: { name: 'x', url: WITH_USERINFO } })])).toHaveLength(
       1
     );
