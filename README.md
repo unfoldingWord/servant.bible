@@ -39,8 +39,11 @@ The router answers every address in
 (production) and `https://staging.servant.bible` (staging), with
 `www.servant.bible` redirecting to the apex. Forwarding is a proxy,
 never a redirect: method, body, and headers pass through, the response streams
-back, and the router holds no credentials
-([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).
+back, and the router holds no credential for any server
+([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)). The page at `/`
+and the browser view of `/mcp` are behind a shared username and password for
+now ([ADR 0006](docs/adr/0006-the-page-behind-a-shared-password.md)); every
+address a program calls, `/mcp.json` included, is open.
 
 | Path                                           | Behaviour                                                                                                                                                           |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -95,8 +98,18 @@ Deployments run from CI only. A merge to `main` deploys staging to
 dispatch of the Deploy workflow. Both are Workers Custom Domains declared in
 `wrangler.toml`, and `tests/node/wrangler-config.test.ts` pins which names each
 deployment owns. The `workers.dev` names of both deployments stay on as
-fallbacks for now. Each deployment reports its version at `/health`. See
-[`CLAUDE.md`](CLAUDE.md) for the rules every contributor and agent follows
+fallbacks for now. Each deployment reports its version at `/health`.
+
+The page credential (ADR 0006) is two Worker secrets, `PAGE_USERNAME` and
+`PAGE_PASSWORD`, that each deploy workflow sets from the GitHub repository
+secrets `PAGE_USERNAME_STAGING`, `PAGE_PASSWORD_STAGING`,
+`PAGE_USERNAME_PRODUCTION`, and `PAGE_PASSWORD_PRODUCTION`. A deploy refuses to
+run when its pair is missing. Rotating the credential is changing the
+repository secrets and deploying. For `wrangler dev`, copy
+`.dev.vars.example` to `.dev.vars` and fill it in; without it the local page
+answers `503`, as any deployment without its secrets would.
+
+See [`CLAUDE.md`](CLAUDE.md) for the rules every contributor and agent follows
 here.
 
 ## Related repositories

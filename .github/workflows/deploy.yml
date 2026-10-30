@@ -59,9 +59,32 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # The page credential (ADR 0006) is two Worker secrets, set here from the
+      # repository secrets and nowhere else. An empty value would deploy a gate
+      # that answers 503 to everyone, so refuse before uploading anything.
+      - name: Assert the page credential is present
+        env:
+          PAGE_USERNAME: ${{ secrets.PAGE_USERNAME_PRODUCTION }}
+          PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          for name in PAGE_USERNAME PAGE_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret ${name}_PRODUCTION is missing or empty; the page gate (ADR 0006) needs it."
+              exit 1
+            fi
+          done
+          echo "Page credential present."
+
       - name: Deploy to Production
         uses: cloudflare/wrangler-action@v4
+        env:
+          PAGE_USERNAME: ${{ secrets.PAGE_USERNAME_PRODUCTION }}
+          PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD_PRODUCTION }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+          secrets: |
+            PAGE_USERNAME
+            PAGE_PASSWORD

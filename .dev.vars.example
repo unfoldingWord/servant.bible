@@ -1,0 +1,5 @@
+# Local values for `wrangler dev`. Copy to `.dev.vars` (ignored by git) and fill
+# in. These are the page credential of ADR 0006; the deployed values are GitHub
+# repository secrets and never appear in this repository.
+PAGE_USERNAME=reader
+PAGE_PASSWORD=change-me

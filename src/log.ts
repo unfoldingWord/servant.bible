@@ -21,3 +21,12 @@ export interface ForwardLine {
 export function logForward(line: ForwardLine): void {
   console.log(JSON.stringify({ event: 'forward', ...line }));
 }
+
+/**
+ * The page gate (ADR 0006) found no credential in this deployment and answered
+ * 503 instead of serving the page open. One line per refused request, so the
+ * misconfiguration is visible in Workers Logs rather than silent.
+ */
+export function logPageGateUnconfigured(): void {
+  console.error(JSON.stringify({ event: 'page_gate', error: 'not configured' }));
+}
