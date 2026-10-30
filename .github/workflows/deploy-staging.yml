@@ -63,6 +63,9 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --env staging
+          # `environment` is what makes wrangler-action pass `--env staging`
+          # to the secrets upload; `--env` inside `command` does not reach it.
+          environment: staging
           secrets: |
             PAGE_USERNAME
             PAGE_PASSWORD
