@@ -25,20 +25,21 @@ no second place to register it.
 
 Every entry has these:
 
-| field         | meaning                                                                                                                                                     |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kind`        | `server` (an MCP server with a backend) or `dataset` (data that may not have a server yet). [ADR 0005](adr/0005-the-list-carries-datasets-and-a-status.md). |
-| `status`      | `available`, `planned`, `degraded`, or `retired`. Only available and degraded servers are routed. Retired entries keep their slugs and answer `410`.        |
-| `org`         | The operator's slug: `uw`, `klappy`, `aquifer`. Lowercase letters, digits, and single hyphens. **Permanent once merged.**                                   |
-| `server`      | The entry's slug, unique within its `org`. Same rules, also permanent. Datasets reserve theirs now so no rename is needed when a server appears.            |
-| `shorthand`   | Optional. The name after `/s/`, unique across every organization. Not every entry needs one. Assigning or moving one is a reviewed list change.             |
-| `name`        | Display name.                                                                                                                                               |
-| `description` | What the entry contains.                                                                                                                                    |
-| `purpose`     | Who it is for and why it exists. One sentence.                                                                                                              |
-| `operator`    | `{ "name", "url"?, "contact"? }`. Who keeps it alive ([ADR 0004](adr/0004-hosting-agnostic-registry.md)). Required for every entry, and the page shows it.  |
-| `sources`     | Optional. `[{ "name", "url" }]` naming the upstream data. The only place a relationship between entries is defined; the map draws from it.                  |
-| `repository`  | Optional. The code, if public.                                                                                                                              |
-| `resources`   | Optional. What it covers, from the fixed vocabulary in the schema (`bible`, `translation-notes`, `study-notes`, and so on). The same slugs BT Servant uses. |
+| field           | meaning                                                                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`          | `server` (an MCP server with a backend) or `dataset` (data that may not have a server yet). [ADR 0005](adr/0005-the-list-carries-datasets-and-a-status.md). |
+| `status`        | `available`, `planned`, `degraded`, or `retired`. Only available and degraded servers are routed. Retired entries keep their slugs and answer `410`.        |
+| `org`           | The operator's slug: `uw`, `klappy`, `aquifer`. Lowercase letters, digits, and single hyphens. **Permanent once merged.**                                   |
+| `server`        | The entry's slug, unique within its `org`. Same rules, also permanent. Datasets reserve theirs now so no rename is needed when a server appears.            |
+| `shorthand`     | Optional. The name after `/s/`, unique across every organization. Not every entry needs one. Assigning or moving one is a reviewed list change.             |
+| `name`          | Display name.                                                                                                                                               |
+| `description`   | What the entry contains.                                                                                                                                    |
+| `purpose`       | Who it is for and why it exists. One sentence.                                                                                                              |
+| `operator`      | `{ "name", "url"?, "contact"? }`. Who keeps it alive ([ADR 0004](adr/0004-hosting-agnostic-registry.md)). Required for every entry, and the page shows it.  |
+| `sources`       | Optional. `[{ "name", "url" }]` naming the upstream data. The only place a relationship between entries is defined; the map draws from it.                  |
+| `repository`    | Optional. The code, if public.                                                                                                                              |
+| `documentation` | Optional. The server's own documentation for consumers, an `https` URL. The page links it.                                                                  |
+| `resources`     | Optional. What it covers, from the fixed vocabulary in the schema (`bible`, `translation-notes`, `study-notes`, and so on). The same slugs BT Servant uses. |
 
 A `server` that is `available` or `degraded` also has:
 

@@ -41,6 +41,7 @@ export interface Entry {
   operator: Operator;
   sources?: Source[];
   repository?: string;
+  documentation?: string;
   resources?: string[];
   current?: string;
   versions?: Record<string, Version>;

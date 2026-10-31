@@ -80,6 +80,7 @@
           "items": { "$ref": "#/$defs/source" }
         },
         "repository": { "$ref": "#/$defs/httpsUrl" },
+        "documentation": { "$ref": "#/$defs/httpsUrl" },
         "resources": {
           "type": "array",
           "minItems": 1,

@@ -63,6 +63,16 @@ export default [
     },
   },
 
+  // scripts/page/copy.js is inlined into the page and runs in the browser.
+  {
+    files: ['scripts/page/copy.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+    },
+  },
+
   // Build-time scripts print their progress; stdout is their output.
   {
     files: ['scripts/**/*.mjs'],
