@@ -16,7 +16,7 @@
     "version": "node scripts/generate-version.mjs && git add src/generated/version.ts",
     "pretest": "pnpm run generate",
     "test": "vitest run",
-    "test:watch": "vitest",
+    "test:watch": "pnpm run generate && vitest",
     "lint": "eslint src/ tests/ scripts/",
     "lint:fix": "eslint src/ tests/ scripts/ --fix",
     "format": "prettier --write .",

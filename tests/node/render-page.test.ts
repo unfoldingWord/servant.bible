@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { renderPage } from '../../scripts/page/render.mjs';
 import servers from '../../servers.json';
 import type { Entry } from '../../src/registry.js';
+import { parseRoute } from '../../src/routes.js';
 
 /**
  * The page (#9) is rendered from the list and nothing else. These tests pin
@@ -81,19 +82,44 @@ describe('the real servers.json', () => {
 
   it('carries the page-level links', () => {
     expect(html).toContain('href="/mcp.json"');
-    expect(html).toContain('href="/standard"');
     expect(html).toContain(
       'href="https://github.com/unfoldingWord/servant.bible/blob/main/docs/adding-a-server.md"'
     );
   });
+
+  // The MCP standard (#20) has no route yet, so the page must not link it:
+  // a primary action that answers 404 is worse than no action. #20 adds the
+  // link with the route. Until then every internal link is one the router
+  // answers.
+  it('links only to addresses the router answers', () => {
+    const internal = [...html.matchAll(/href="(\/[^"]*)"/g)].map((match) => match[1] ?? '');
+    expect(internal.length).toBeGreaterThan(0);
+    for (const href of internal) {
+      expect(parseRoute(href).kind, href).not.toBe('unknown');
+    }
+    expect(html).not.toContain('/standard');
+  });
 });
 
 describe('operator distinction (ADR 0004)', () => {
-  it('marks a server unfoldingWord runs as run by unfoldingWord', () => {
+  // The org slug is the canonical operator identity (ADR 0002): `uw` is
+  // unfoldingWord whatever the display name says, and any other org is not.
+  it('marks a server under org uw as run by unfoldingWord', () => {
     const html = render([entry({ org: 'uw', server: 'ours' })]);
     expect(html).toContain('class="operator"');
     expect(html).toContain('href="https://unfoldingword.org"');
     expect(html).not.toContain('blessed by');
+  });
+
+  it('decides by org, not by the display name, in both directions', () => {
+    const odd = render([
+      entry({ org: 'uw', server: 'ours', operator: { name: 'UnfoldingWord' } }),
+      entry({ org: 'other', server: 'theirs', operator: { name: 'unfoldingWord' } }),
+    ]);
+    expect(odd).toContain('<p class="operator">Run by <span class="chip">UnfoldingWord</span></p>');
+    expect(odd).toContain(
+      '<p class="operator operator-blessed">Run by <span class="chip">unfoldingWord</span> blessed by unfoldingWord</p>'
+    );
   });
 
   it('marks a server someone else runs as blessed, naming the operator', () => {

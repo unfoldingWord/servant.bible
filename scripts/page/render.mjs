@@ -13,6 +13,8 @@ const SITE = 'https://servant.bible';
 const REPO = 'https://github.com/unfoldingWord/servant.bible';
 const ADD_A_SERVER = `${REPO}/blob/main/docs/adding-a-server.md`;
 const UNFOLDINGWORD = 'unfoldingWord';
+/** The org slug that is unfoldingWord: the canonical operator identity (ADR 0002). */
+const UNFOLDINGWORD_ORG = 'uw';
 const FONTS =
   'https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
 
@@ -50,11 +52,15 @@ function head(entry) {
   return `<div class="card-head"><h3>${escape(entry.name)}</h3>${status(entry)}</div>`;
 }
 
-/** Run by unfoldingWord, or run by someone else and blessed (ADR 0004). */
+/**
+ * Run by unfoldingWord, or run by someone else and blessed (ADR 0004). The
+ * org slug decides, not the display name: `org` names the operator (ADR
+ * 0002) and is constrained, while `operator.name` is free text.
+ */
 function operator(entry) {
   const { name, url } = entry.operator;
   const chip = `<span class="chip">${url ? link(url, name) : escape(name)}</span>`;
-  if (name === UNFOLDINGWORD) return `<p class="operator">Run by ${chip}</p>`;
+  if (entry.org === UNFOLDINGWORD_ORG) return `<p class="operator">Run by ${chip}</p>`;
   return `<p class="operator operator-blessed">Run by ${chip} blessed by ${UNFOLDINGWORD}</p>`;
 }
 
@@ -174,7 +180,6 @@ function section(spec, entries) {
 function nav(entries) {
   const present = SECTIONS.filter((spec) => entries.some(spec.pick));
   const items = present.map((spec) => `<li><a href="#${spec.id}">${spec.title}</a></li>`);
-  items.push('<li><a href="/standard">Standard</a></li>');
   items.push(`<li class="optional"><a href="${REPO}">GitHub</a></li>`);
   const brand = `<a class="brand" href="/"><span class="brand-dot"></span>Servant.Bible</a>`;
   return `<nav class="nav"><div class="nav-inner">${brand}<ul class="nav-links">${items.join('')}</ul></div></nav>`;
@@ -194,9 +199,10 @@ function stats(entries) {
 function hero(entries, version) {
   const lead =
     'Servant.Bible lists MCP servers that give AI agents access to <strong>trusted Bible resources</strong> — translation helps, study notes, dictionaries, and texts. Each server on this list meets a common quality standard, so a tool like <strong>BT Servant</strong> can answer a translator’s question from the actual sources, not from memory.';
+  // The MCP standard (#20) gets its link here once its route exists; a
+  // primary action that answers 404 is worse than none.
   const ctas = [
     `<a class="btn btn-primary" href="/mcp.json">Get the list <code>/mcp.json</code></a>`,
-    `<a class="btn" href="/standard">Read the standard</a>`,
     `<a class="btn" href="${ADD_A_SERVER}">Add a server</a>`,
   ].join('');
   return `<header class="hero"><span class="eyebrow">MCP registry · v${escape(version)}</span><h1>Bible resources <span class="glow">any agent</span> can trust.</h1><p class="lead">${lead}</p><div class="cta-row">${ctas}</div>${stats(entries)}</header>`;
