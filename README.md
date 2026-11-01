@@ -25,7 +25,7 @@ than this page.
 | [`servers.schema.json`](servers.schema.json) | The JSON Schema that `pnpm validate:servers` checks the registry against, in the pre-commit hook and in CI.                                                                                                                  |
 | [`docs/`](docs/)                             | Documentation, starting with the [decision records](docs/README.md).                                                                                                                                                         |
 | [`src/`](src/)                               | The router Worker that owns the apex ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).                                                                                                                           |
-| [`public/`](public/)                         | Static assets the Worker serves. `index.html` is generated from `servers.json` on every build (`pnpm generate:page`) and is not committed.                                                                                   |
+| [`public/`](public/)                         | Static assets the Worker serves. `index.html`, `sign-in.html`, and `sign-in-failed.html` are generated on every build (`pnpm generate:page`) and are not committed.                                                          |
 | [`tests/`](tests/)                           | Vitest tests: `unit/` runs inside the Workers runtime, `node/` covers the dev-time scripts.                                                                                                                                  |
 | [`.github/`](.github/)                       | CI on every pull request, deployments from CI, Dependabot.                                                                                                                                                                   |
 | Issues                                       | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list.                                                                                                                              |
@@ -43,7 +43,9 @@ never a redirect: method, body, and headers pass through, the response streams
 back, and the router holds no credential for any server
 ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)). The page at `/`
 and the browser view of `/mcp` are behind a shared username and password for
-now ([ADR 0006](docs/adr/0006-the-page-behind-a-shared-password.md)); every
+now ([ADR 0006](docs/adr/0006-the-page-behind-a-shared-password.md)), entered
+once on a sign-in page and kept by a signed cookie for 30 days
+([ADR 0007](docs/adr/0007-a-sign-in-page-and-a-signed-cookie.md)); every
 address a program calls, `/mcp.json` included, is open.
 
 | Path                                           | Behaviour                                                                                                                                                           |
@@ -55,7 +57,9 @@ address a program calls, `/mcp.json` included, is open.
 | `/mcp`                                         | A browser (`Accept: text/html`) gets the page; anything else gets the list as JSON.                                                                                 |
 | `/mcp.json`                                    | Always the list as JSON, with `$schema` pointing at `/servers.schema.json`.                                                                                         |
 | `/servers.schema.json`                         | The schema the list is checked against.                                                                                                                             |
-| `/`                                            | The page, generated from `servers.json`.                                                                                                                            |
+| `/`                                            | The page, generated from `servers.json`. Without the cookie or a Basic header, `401` with the sign-in page.                                                         |
+| `/sign-in`                                     | `GET` the sign-in page; `POST` the form to get the cookie and a `303` to `/`, or `401` with the page again.                                                         |
+| `/sign-out`                                    | `POST` clears the cookie and answers `303` to `/`.                                                                                                                  |
 | `/health`                                      | The router's version, environment, and the number of servers it routes.                                                                                             |
 | `www.` host                                    | `308` to the same path on the apex.                                                                                                                                 |
 
@@ -102,14 +106,17 @@ dispatch of the Deploy workflow. Both are Workers Custom Domains declared in
 deployment owns. The `workers.dev` names of both deployments stay on as
 fallbacks for now. Each deployment reports its version at `/health`.
 
-The page credential (ADR 0006) is two Worker secrets, `PAGE_USERNAME` and
-`PAGE_PASSWORD`, that each deploy workflow sets from the GitHub repository
-secrets `PAGE_USERNAME_STAGING`, `PAGE_PASSWORD_STAGING`,
-`PAGE_USERNAME_PRODUCTION`, and `PAGE_PASSWORD_PRODUCTION`. A deploy refuses to
-run when its pair is missing. Rotating the credential is changing the
-repository secrets and deploying. For `wrangler dev`, copy
-`.dev.vars.example` to `.dev.vars` and fill it in; without it the local page
-answers `503`, as any deployment without its secrets would.
+The page credential and the cookie secret (ADR 0006, ADR 0007) are three
+Worker secrets, `PAGE_USERNAME`, `PAGE_PASSWORD`, and `PAGE_COOKIE_SECRET`, that
+each deploy workflow sets from the GitHub repository secrets
+`PAGE_USERNAME_STAGING`, `PAGE_PASSWORD_STAGING`, `PAGE_COOKIE_SECRET_STAGING`,
+`PAGE_USERNAME_PRODUCTION`, `PAGE_PASSWORD_PRODUCTION`, and
+`PAGE_COOKIE_SECRET_PRODUCTION`. A deploy refuses to run when any of its three
+is missing. Rotating the credential is changing the repository secrets and
+deploying; a new password signs every browser out, because the cookie is
+signed over the credential. For `wrangler dev`, copy `.dev.vars.example` to
+`.dev.vars` and fill it in; without all three values the local page answers
+`503`, as any deployment missing a secret would.
 
 See [`CLAUDE.md`](CLAUDE.md) for the rules every contributor and agent follows
 here.

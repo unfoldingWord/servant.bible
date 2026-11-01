@@ -21,7 +21,7 @@ function deployStep(text: string, stepName: string): string {
   return next === -1 ? rest : rest.slice(0, next);
 }
 
-const SECRET_NAMES = ['PAGE_USERNAME', 'PAGE_PASSWORD'];
+const SECRET_NAMES = ['PAGE_USERNAME', 'PAGE_PASSWORD', 'PAGE_COOKIE_SECRET'];
 
 describe('deploy workflows set the page credential (ADR 0006)', () => {
   const staging = deployStep(STAGING_YML, 'Deploy to Staging');
@@ -40,10 +40,24 @@ describe('deploy workflows set the page credential (ADR 0006)', () => {
   it.each([
     ['staging', staging, 'STAGING'],
     ['production', production, 'PRODUCTION'],
-  ])('%s uploads both secrets from its own repository secrets', (_, step, suffix) => {
+  ])('%s uploads all three secrets from its own repository secrets', (_, step, suffix) => {
     for (const name of SECRET_NAMES) {
       expect(step).toContain(`${name}: \${{ secrets.${name}_${suffix} }}`);
       expect(step.split('\n').map((line) => line.trim())).toContain(name);
+    }
+  });
+
+  // ADR 0007, decision 7: a missing cookie secret must stop the deploy the
+  // same way a missing credential does, or the gate answers 503 to everyone.
+  it.each([
+    ['staging', STAGING_YML, 'STAGING'],
+    ['production', PRODUCTION_YML, 'PRODUCTION'],
+  ])('%s refuses to deploy when any of the three is empty', (_, text, suffix) => {
+    const assert = deployStep(text, 'Assert the page credential is present');
+    const loop = assert.match(/for name in ([^;]+); do/)?.[1] ?? '';
+    for (const name of SECRET_NAMES) {
+      expect(assert).toContain(`${name}: \${{ secrets.${name}_${suffix} }}`);
+      expect(loop.split(/\s+/)).toContain(name);
     }
   });
 });

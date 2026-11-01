@@ -38,6 +38,19 @@ describe('generatePage', () => {
     expect(readFileSync(outPath, 'utf8')).toBe(html);
   });
 
+  it('writes the two sign-in pages beside it (ADR 0007)', () => {
+    const dir = path.join(scratch(), 'site');
+    const outPath = path.join(dir, 'index.html');
+
+    generatePage({ serversPath: SERVERS, schemaPath: SCHEMA, outPath });
+
+    const plain = readFileSync(path.join(dir, 'sign-in.html'), 'utf8');
+    const failed = readFileSync(path.join(dir, 'sign-in-failed.html'), 'utf8');
+    expect(plain).toContain('action="/sign-in"');
+    expect(plain).not.toContain('class="form-error"');
+    expect(failed).toContain('class="form-error"');
+  });
+
   it('throws naming every error and writes nothing when the list is invalid', () => {
     const dir = scratch();
     const serversPath = path.join(dir, 'servers.json');
@@ -50,5 +63,7 @@ describe('generatePage', () => {
       /duplicate org\/server/
     );
     expect(existsSync(outPath)).toBe(false);
+    expect(existsSync(path.join(dir, 'sign-in.html'))).toBe(false);
+    expect(existsSync(path.join(dir, 'sign-in-failed.html'))).toBe(false);
   });
 });

@@ -37,28 +37,31 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      # The page credential (ADR 0006) is two Worker secrets, set here from the
-      # repository secrets and nowhere else. An empty value would deploy a gate
-      # that answers 503 to everyone, so refuse before uploading anything.
+      # The page credential and the cookie secret (ADR 0006, ADR 0007) are
+      # three Worker secrets, set here from the repository secrets and nowhere
+      # else. An empty value would deploy a gate that answers 503 to everyone,
+      # so refuse before uploading anything.
       - name: Assert the page credential is present
         env:
           PAGE_USERNAME: ${{ secrets.PAGE_USERNAME_STAGING }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD_STAGING }}
+          PAGE_COOKIE_SECRET: ${{ secrets.PAGE_COOKIE_SECRET_STAGING }}
         run: |
           set -euo pipefail
-          for name in PAGE_USERNAME PAGE_PASSWORD; do
+          for name in PAGE_USERNAME PAGE_PASSWORD PAGE_COOKIE_SECRET; do
             if [ -z "${!name}" ]; then
-              echo "::error::Repository secret ${name}_STAGING is missing or empty; the page gate (ADR 0006) needs it."
+              echo "::error::Repository secret ${name}_STAGING is missing or empty; the page gate (ADR 0006, ADR 0007) needs it."
               exit 1
             fi
           done
-          echo "Page credential present."
+          echo "Page credential and cookie secret present."
 
       - name: Deploy to Staging
         uses: cloudflare/wrangler-action@v4
         env:
           PAGE_USERNAME: ${{ secrets.PAGE_USERNAME_STAGING }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD_STAGING }}
+          PAGE_COOKIE_SECRET: ${{ secrets.PAGE_COOKIE_SECRET_STAGING }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -69,3 +72,4 @@ jobs:
           secrets: |
             PAGE_USERNAME
             PAGE_PASSWORD
+            PAGE_COOKIE_SECRET

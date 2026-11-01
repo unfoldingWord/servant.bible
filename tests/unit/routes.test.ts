@@ -10,6 +10,8 @@ describe('fixed addresses', () => {
     ['/mcp', { kind: 'list', json: false }],
     ['/mcp.json', { kind: 'list', json: true }],
     ['/servers.schema.json', { kind: 'schema' }],
+    ['/sign-in', { kind: 'sign-in' }],
+    ['/sign-out', { kind: 'sign-out' }],
   ])('%s', (path, route) => {
     expect(parseRoute(path)).toEqual(route);
   });

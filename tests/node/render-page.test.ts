@@ -79,6 +79,16 @@ describe('the real servers.json', () => {
     expect(html).toContain('<title>Servant.Bible</title>');
     expect(html).toContain('Servant.Bible 9.9.9');
   });
+});
+
+describe('the page-level links', () => {
+  const html = renderPage(servers, OPTIONS);
+
+  it('carries the sign-out form in the nav (ADR 0007, decision 2)', () => {
+    expect(html).toContain(
+      '<form class="sign-out" method="post" action="/sign-out"><button type="submit">Sign out</button></form>'
+    );
+  });
 
   it('carries the page-level links', () => {
     expect(html).toContain('href="/mcp.json"');
@@ -92,7 +102,9 @@ describe('the real servers.json', () => {
   // link with the route. Until then every internal link is one the router
   // answers.
   it('links only to addresses the router answers', () => {
-    const internal = [...html.matchAll(/href="(\/[^"]*)"/g)].map((match) => match[1] ?? '');
+    const internal = [...html.matchAll(/(?:href|action)="(\/[^"]*)"/g)].map(
+      (match) => match[1] ?? ''
+    );
     expect(internal.length).toBeGreaterThan(0);
     for (const href of internal) {
       expect(parseRoute(href).kind, href).not.toBe('unknown');

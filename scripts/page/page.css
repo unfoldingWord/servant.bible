@@ -8,6 +8,7 @@
  * split into an identity column and an addresses column on wide screens, a
  * grid of planned entries, a short colophon. The only external request is
  * the type from Google Fonts; the list itself is baked in at build time.
+ * The sign-in page (ADR 0007) shares this file: one centred card.
  */
 
 :root {
@@ -746,12 +747,128 @@ code {
   color: var(--fg-muted);
 }
 
+/* ── Sign-in page and sign-out (ADR 0007) ─────────────────────────────── */
+
+.sign-in {
+  min-height: 100%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2rem;
+  padding-block: 3rem;
+}
+
+.sign-in-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.sign-in-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+  opacity: 0.7;
+}
+
+.sign-in-card h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.sign-in-card .lead {
+  font-size: 0.95rem;
+}
+
+.sign-in-card .lead a {
+  color: var(--accent);
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--fg-muted);
+}
+
+.field input {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--fg);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.85rem;
+  width: 100%;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  border: 1px solid rgba(229, 157, 51, 0.35);
+  color: var(--warn);
+  font-size: 0.88rem;
+}
+
+.sign-in-card .btn {
+  justify-content: center;
+  margin-top: 0.3rem;
+}
+
+.sign-in .colophon {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 0;
+}
+
+.sign-out {
+  margin: 0;
+}
+
+.sign-out button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sign-out button:hover {
+  color: var(--fg);
+}
+
 /* ── Motion ───────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: no-preference) {
   .hero > *,
   .card,
-  .tile {
+  .tile,
+  .sign-in-card {
     animation: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
 

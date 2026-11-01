@@ -1,3 +1,4 @@
+import { COOKIE_NAME, withoutCookie } from './cookie.js';
 import { json } from './http.js';
 import { logForward } from './log.js';
 import type { Target } from './resolve.js';
@@ -9,7 +10,8 @@ import type { Target } from './resolve.js';
  * the backend's status, headers, and body stream, so `text/event-stream`
  * bodies stream and `Mcp-Session-Id` comes back. No timeout is imposed: the
  * backends set their own, and BT Servant allows 30 s per tool call. No
- * credential is added.
+ * credential is added, and the page cookie is taken away (ADR 0007, decision
+ * 6): it stands for the page credential, which never goes upstream.
  */
 
 export interface ForwardDeps {
@@ -55,6 +57,16 @@ function withoutHopByHop(source: Headers): Headers {
   return headers;
 }
 
+/** The same headers with the page cookie removed; any other cookie stays. */
+function withoutPageCookie(headers: Headers): Headers {
+  const cookie = headers.get('cookie');
+  if (cookie === null) return headers;
+  const kept = withoutCookie(cookie, COOKIE_NAME);
+  if (kept === undefined) headers.delete('cookie');
+  else headers.set('cookie', kept);
+  return headers;
+}
+
 /** The backend's response for the caller: same status, body stream, and headers. */
 function clientResponse(upstream: Response): Response {
   const headers = withoutHopByHop(upstream.headers);
@@ -71,7 +83,7 @@ function clientResponse(upstream: Response): Response {
 function upstreamRequest(request: Request, target: Target): Request {
   return new Request(target.url, {
     method: request.method,
-    headers: withoutHopByHop(request.headers),
+    headers: withoutPageCookie(withoutHopByHop(request.headers)),
     body: request.body,
     // A backend's redirect goes back to the caller untouched; following it
     // here would turn a POST into a GET on the caller's behalf.
