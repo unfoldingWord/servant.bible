@@ -68,6 +68,22 @@ describe('request headers', () => {
     expect(seen.headers).toMatchObject(headers);
   });
 
+  it('strips the page cookie and keeps every other cookie (ADR 0007, decision 6)', async () => {
+    const mixed = await sendThrough({
+      method: 'POST',
+      body: RPC,
+      headers: { cookie: 'theirs=1; servant_bible_page=123.abc; other=2' },
+    });
+    expect(mixed.headers['cookie']).toBe('theirs=1; other=2');
+
+    const only = await sendThrough({
+      method: 'POST',
+      body: RPC,
+      headers: { cookie: 'servant_bible_page=123.abc' },
+    });
+    expect(only.headers).not.toHaveProperty('cookie');
+  });
+
   it('drops hop-by-hop headers and the caller’s Host', async () => {
     const seen = await sendThrough({
       headers: {

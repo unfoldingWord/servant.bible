@@ -14,7 +14,11 @@ const router = createRouter({ registry: fixtureRegistry, schema: SCHEMA, fetch: 
 
 // The page credential (ADR 0006) is a Worker secret, so wrangler.toml never
 // carries it; the tests supply one. gate.test.ts covers the gate itself.
-const PAGE = { PAGE_USERNAME: 'reader', PAGE_PASSWORD: 'fixture-password' };
+const PAGE = {
+  PAGE_USERNAME: 'reader',
+  PAGE_PASSWORD: 'fixture-password',
+  PAGE_COOKIE_SECRET: 'fixture-cookie-secret',
+};
 const PAGE_AUTH = { authorization: `Basic ${btoa('reader:fixture-password')}` };
 
 const testEnv: Env = { ...(env as unknown as Env), BOUND: echoBinding(), ...PAGE };

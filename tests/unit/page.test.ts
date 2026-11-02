@@ -17,8 +17,13 @@ const router = createRouter({
   schema: { $id: SCHEMA_URL },
   fetch: (r) => echo(r),
 });
-const PAGE = { PAGE_USERNAME: 'reader', PAGE_PASSWORD: 'fixture-password' };
+const PAGE = {
+  PAGE_USERNAME: 'reader',
+  PAGE_PASSWORD: 'fixture-password',
+  PAGE_COOKIE_SECRET: 'fixture-cookie-secret',
+};
 const AUTH = { authorization: `Basic ${btoa('reader:fixture-password')}` };
+const PAGE_FORM = { username: 'reader', password: 'fixture-password' };
 const testEnv: Env = { ...(env as unknown as Env), ...PAGE };
 
 function get(path: string, init?: RequestInit): Promise<Response> {
@@ -44,6 +49,40 @@ describe('the page the Worker serves', () => {
     ]);
 
     expect(await mcp.text()).toBe(await root.text());
+  });
+});
+
+describe('the sign-in the Worker serves (ADR 0007)', () => {
+  it('lists every entry to the cookie a sign-in sets, and offers sign-out', async () => {
+    const signedIn = await get('/sign-in', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(PAGE_FORM).toString(),
+    });
+    expect(signedIn.status).toBe(303);
+    const cookie = (signedIn.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
+
+    const response = await get('/', { headers: { cookie } });
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    for (const item of servers.entries) {
+      expect(html).toContain(`data-entry="${item.org}/${item.server}"`);
+    }
+    expect(html).toContain('action="/sign-out"');
+  });
+
+  it('serves the generated sign-in page at /sign-in and as the 401 body', async () => {
+    const [page, refused] = await Promise.all([
+      get('/sign-in'),
+      get('/', { headers: { accept: 'text/html' } }),
+    ]);
+
+    expect(page.status).toBe(200);
+    expect(refused.status).toBe(401);
+    const html = await page.text();
+    expect(html).toContain('action="/sign-in"');
+    expect(await refused.text()).toBe(html);
   });
 
   it('answers HEAD with the headers and no body', async () => {

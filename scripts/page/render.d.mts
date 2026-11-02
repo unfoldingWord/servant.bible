@@ -12,8 +12,24 @@ export interface RenderOptions {
   version: string;
 }
 
+export interface HeadOptions {
+  title: string;
+  description: string;
+  /** The stylesheet to inline. */
+  css: string;
+}
+
 /** HTML-escape a value for text or an attribute. */
 export function escape(value: unknown): string;
+
+/** The document's opening lines through `</head>`, shared with the sign-in page. */
+export function documentHead(options: HeadOptions): string[];
+
+/** The site name, linking home. */
+export function brand(): string;
+
+/** The version line and repository link. */
+export function colophon(version: string): string;
 
 /** Render the page from a parsed servers.json that already passed the schema. */
 export function renderPage(doc: unknown, options: RenderOptions): string;

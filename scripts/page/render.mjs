@@ -177,12 +177,22 @@ function section(spec, entries) {
   return `<section class="section" id="${spec.id}"><div class="section-head">${heading}<p>${spec.blurb}</p></div><ul class="${spec.list}">${items}</ul></section>`;
 }
 
+/** The site name, linking home; shared with the sign-in page. */
+export function brand() {
+  return `<a class="brand" href="/"><span class="brand-dot"></span>Servant.Bible</a>`;
+}
+
+/** Sign out clears the cookie (ADR 0007, decision 2); a form, because it changes state. */
+function signOut() {
+  return `<form class="sign-out" method="post" action="/sign-out"><button type="submit">Sign out</button></form>`;
+}
+
 function nav(entries) {
   const present = SECTIONS.filter((spec) => entries.some(spec.pick));
   const items = present.map((spec) => `<li><a href="#${spec.id}">${spec.title}</a></li>`);
   items.push(`<li class="optional"><a href="${REPO}">GitHub</a></li>`);
-  const brand = `<a class="brand" href="/"><span class="brand-dot"></span>Servant.Bible</a>`;
-  return `<nav class="nav"><div class="nav-inner">${brand}<ul class="nav-links">${items.join('')}</ul></div></nav>`;
+  items.push(`<li>${signOut()}</li>`);
+  return `<nav class="nav"><div class="nav-inner">${brand()}<ul class="nav-links">${items.join('')}</ul></div></nav>`;
 }
 
 function stat(n, label) {
@@ -208,9 +218,33 @@ function hero(entries, version) {
   return `<header class="hero"><span class="eyebrow">MCP registry · v${escape(version)}</span><h1>Bible resources <span class="glow">any agent</span> can trust.</h1><p class="lead">${lead}</p><div class="cta-row">${ctas}</div>${stats(entries)}</header>`;
 }
 
-function colophon(version) {
+/** The version line and repository link; shared with the sign-in page. */
+export function colophon(version) {
   return `<footer class="colophon"><span>Servant.Bible ${escape(version)} · generated from servers.json</span>${link(REPO, 'github.com/unfoldingWord/servant.bible')}</footer>`;
 }
+
+/**
+ * The document's opening lines through `</head>`, as an array of lines;
+ * shared with the sign-in page so both carry the same metadata, fonts, and
+ * inlined stylesheet.
+ */
+export function documentHead({ title, description, css }) {
+  return [
+    '<!doctype html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="utf-8" />',
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />',
+    `<title>${escape(title)}</title>`,
+    `<meta name="description" content="${escape(description)}" />`,
+    `<link rel="stylesheet" href="${FONTS}" />`,
+    `<style>\n${css}\n</style>`,
+    '</head>',
+  ];
+}
+
+const DESCRIPTION =
+  'Servant.Bible: the Bible resource layer any AI agent can call. The list of MCP servers unfoldingWord runs or blesses.';
 
 /**
  * The whole page. `doc` is a parsed servers.json that already passed the
@@ -223,16 +257,7 @@ export function renderPage(doc, options) {
   const sections = SECTIONS.map((spec) => section(spec, entries)).join('');
   const main = `<main class="scroll"><div class="page">${hero(entries, version)}${sections}${colophon(version)}</div></main>`;
   return [
-    '<!doctype html>',
-    '<html lang="en">',
-    '<head>',
-    '<meta charset="utf-8" />',
-    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />',
-    '<title>Servant.Bible</title>',
-    '<meta name="description" content="Servant.Bible: the Bible resource layer any AI agent can call. The list of MCP servers unfoldingWord runs or blesses." />',
-    `<link rel="stylesheet" href="${FONTS}" />`,
-    `<style>\n${css}\n</style>`,
-    '</head>',
+    ...documentHead({ title: 'Servant.Bible', description: DESCRIPTION, css }),
     '<body>',
     nav(entries),
     main,

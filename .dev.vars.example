@@ -1,5 +1,7 @@
 # Local values for `wrangler dev`. Copy to `.dev.vars` (ignored by git) and fill
-# in. These are the page credential of ADR 0006; the deployed values are GitHub
-# repository secrets and never appear in this repository.
+# in. These are the page credential of ADR 0006 and the cookie secret of ADR
+# 0007; the deployed values are GitHub repository secrets and never appear in
+# this repository. The cookie secret is any long random string.
 PAGE_USERNAME=reader
 PAGE_PASSWORD=change-me
+PAGE_COOKIE_SECRET=change-me-too

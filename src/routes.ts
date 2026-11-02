@@ -2,6 +2,7 @@
  * The address grammar of ADR 0002, as a pure parse of the request path:
  *
  *   /                                              page
+ *   /sign-in, /sign-out                            the page gate's own pages (ADR 0007)
  *   /health                                        the router's own health
  *   /mcp, /mcp.json                                the list
  *   /servers.schema.json                           the list's schema
@@ -14,6 +15,8 @@
 
 export type Route =
   | { kind: 'page' }
+  | { kind: 'sign-in' }
+  | { kind: 'sign-out' }
   | { kind: 'health' }
   | { kind: 'list'; json: boolean }
   | { kind: 'schema' }
@@ -39,6 +42,8 @@ const UNKNOWN: Route = { kind: 'unknown' };
 
 const FIXED = new Map<string, Route>([
   ['/', { kind: 'page' }],
+  ['/sign-in', { kind: 'sign-in' }],
+  ['/sign-out', { kind: 'sign-out' }],
   ['/health', { kind: 'health' }],
   ['/mcp', { kind: 'list', json: false }],
   ['/mcp.json', { kind: 'list', json: true }],
