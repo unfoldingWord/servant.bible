@@ -130,9 +130,9 @@ function signInRoute(ctx: Ctx): Response | Promise<Response> {
   }
 }
 
-function signOutRoute(ctx: Ctx): Response {
+function signOutRoute(ctx: Ctx): Response | Promise<Response> {
   if (ctx.request.method !== 'POST') return methodNotAllowed('POST');
-  return signOut(ctx.env);
+  return signOut(ctx.env, ctx.request);
 }
 
 function server(ctx: Ctx, route: ServerRoute | ShorthandRoute): Promise<Response> {

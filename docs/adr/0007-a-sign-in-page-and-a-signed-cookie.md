@@ -38,9 +38,9 @@ shared credential, and what the router has to hold to remember that they did.
    to `/` with the cookie of decision 3. When they do not, it answers `401`
    with the sign-in page in its "did not match" form, and no cookie. A body
    over 4 KB answers `413` and any other content type `415`, before the
-   credential is looked at. **`POST /sign-out`** clears the cookie and
-   answers `303` to `/`; the page's nav carries that form. Any other method
-   on these two paths answers `405`.
+   credential is looked at. **`POST /sign-out`** answers `303` to `/`, and
+   clears the cookie only when the request carries a valid one; the page's
+   nav carries that form. Any other method on these two paths answers `405`.
 3. **The cookie is `servant_bible_page`**: `HttpOnly`, `Secure`,
    `SameSite=Lax`, `Path=/`, `Max-Age=2592000` (30 days). Its value is
    `<expiry>.<signature>`: the expiry as Unix seconds, and the base64url
@@ -86,8 +86,11 @@ shared credential, and what the router has to hold to remember that they did.
   authentication, and the form makes guessing easier to script. A rate limit
   on `POST /sign-in` is a Cloudflare WAF rule, configured outside this
   repository, and is a follow-up issue, not part of this change.
-- Login CSRF is moot with a shared credential; sign-out CSRF is blocked by
-  `SameSite=Lax`, which keeps the cookie off a cross-site `POST`.
+- Login CSRF is moot with a shared credential. Sign-out CSRF is blocked
+  because clearing the cookie requires a valid one on the request:
+  `SameSite=Lax` keeps the cookie off a cross-site `POST`, so a cross-site
+  form cannot prove it is signed in. (`SameSite` alone would not do; a
+  browser honours a `Set-Cookie` on the response whatever the request sent.)
 - Rotating the password now needs no cookie-key rotation; rotating the cookie
   key alone also signs everyone out. Both are a change to the repository
   secrets and a deploy.

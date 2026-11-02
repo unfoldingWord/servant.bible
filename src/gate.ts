@@ -80,15 +80,16 @@ function presented(request: Request): string | undefined {
   return new TextDecoder().decode(bytes);
 }
 
+/** The request carries a valid page cookie (ADR 0007, decision 3). */
+async function signedIn(request: Request, gate: PageGate): Promise<boolean> {
+  const token = cookieValue(request.headers.get('cookie'), COOKIE_NAME);
+  if (token === undefined) return false;
+  return verifyToken(gate.secret, gate.credential, token, nowSeconds());
+}
+
 /** A valid cookie, or a correct Basic header (ADR 0007, decisions 3 and 5). */
 async function authorized(request: Request, gate: PageGate): Promise<boolean> {
-  const token = cookieValue(request.headers.get('cookie'), COOKIE_NAME);
-  if (
-    token !== undefined &&
-    (await verifyToken(gate.secret, gate.credential, token, nowSeconds()))
-  ) {
-    return true;
-  }
+  if (await signedIn(request, gate)) return true;
   const given = presented(request);
   return given !== undefined && sameSecret(given, gate.credential);
 }
@@ -100,11 +101,10 @@ function answer(response: Response, status = response.status): Response {
   return new Response(response.body, { status, headers });
 }
 
-function home(cookie: string): Response {
-  return new Response(null, {
-    status: 303,
-    headers: { location: '/', 'set-cookie': cookie, ...NO_STORE },
-  });
+function home(cookie?: string): Response {
+  const headers = new Headers({ location: '/', ...NO_STORE });
+  if (cookie !== undefined) headers.set('set-cookie', cookie);
+  return new Response(null, { status: 303, headers });
 }
 
 /** The form fields, or the 415 or 413 that refuses the body before any comparison. */
@@ -153,9 +153,17 @@ export async function signIn(
   return home(`${COOKIE_NAME}=${token}; Max-Age=${COOKIE_MAX_AGE}; ${COOKIE_ATTRIBUTES}`);
 }
 
-/** `POST /sign-out`: clear the cookie and go home. */
-export function signOut(env: GateEnv): Response {
+/**
+ * `POST /sign-out`: clear the cookie and go home. Only a request that
+ * carries a valid cookie gets the clearing cookie: `SameSite=Lax` keeps the
+ * cookie off a cross-site form post, so such a post cannot prove it is
+ * signed in, and it must not be able to sign a visitor out (the browser
+ * would honour a `Set-Cookie` on the response regardless). Anyone else is
+ * simply sent home.
+ */
+export async function signOut(env: GateEnv, request: Request): Promise<Response> {
   const opened = open(env);
   if (!opened.ok) return opened.response;
+  if (!(await signedIn(request, opened.gate))) return home();
   return home(`${COOKIE_NAME}=; Max-Age=0; ${COOKIE_ATTRIBUTES}`);
 }

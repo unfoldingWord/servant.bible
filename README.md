@@ -59,7 +59,7 @@ address a program calls, `/mcp.json` included, is open.
 | `/servers.schema.json`                         | The schema the list is checked against.                                                                                                                             |
 | `/`                                            | The page, generated from `servers.json`. Without the cookie or a Basic header, `401` with the sign-in page.                                                         |
 | `/sign-in`                                     | `GET` the sign-in page; `POST` the form to get the cookie and a `303` to `/`, or `401` with the page again.                                                         |
-| `/sign-out`                                    | `POST` clears the cookie and answers `303` to `/`.                                                                                                                  |
+| `/sign-out`                                    | `POST` answers `303` to `/`, clearing the cookie when the request carries a valid one.                                                                              |
 | `/health`                                      | The router's version, environment, and the number of servers it routes.                                                                                             |
 | `www.` host                                    | `308` to the same path on the apex.                                                                                                                                 |
 

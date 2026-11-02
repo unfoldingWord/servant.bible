@@ -246,6 +246,26 @@ describe('signing out (ADR 0007, decision 2)', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 
+  // Codex review on #40: SameSite=Lax keeps the cookie off a cross-site
+  // POST, but the browser still honours a Set-Cookie on the response. So
+  // the clearing cookie is sent only to a request that proves it is signed
+  // in, which a cross-site form cannot do.
+  it('does not clear the cookie for a request without a valid one (cross-site form)', async () => {
+    const stale = await cookieFor(CREDENTIAL, NOW_SECONDS() - 1);
+    const requests = [
+      post('/sign-out', gated, {}),
+      post('/sign-out', gated, {}, { ...FORM, cookie: stale }),
+      post('/sign-out', gated, {}, { ...FORM, cookie: `${COOKIE_NAME}=garbage` }),
+      post('/sign-out', gated, {}, { ...FORM, authorization: basic(USERNAME, PASSWORD) }),
+    ];
+    for (const response of await Promise.all(requests)) {
+      expect(response.status).toBe(303);
+      expect(response.headers.get('location')).toBe('/');
+      expect(response.headers.get('set-cookie')).toBeNull();
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+  });
+
   it('answers POST only', async () => {
     const response = await get('/sign-out', gated, BROWSER);
 
