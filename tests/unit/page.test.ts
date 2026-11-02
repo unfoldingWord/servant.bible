@@ -30,6 +30,16 @@ function get(path: string, init?: RequestInit): Promise<Response> {
   return router.fetch(new Request(`https://servant.bible${path}`, init), testEnv);
 }
 
+/** The cookie a sign-in sets, as a request sends it back. */
+async function signedInCookie(): Promise<string | undefined> {
+  const response = await get('/sign-in', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(PAGE_FORM).toString(),
+  });
+  return response.headers.get('set-cookie')?.split(';')[0];
+}
+
 describe('the page the Worker serves', () => {
   it('lists every entry in servers.json at /', async () => {
     const response = await get('/', { headers: AUTH });
@@ -91,5 +101,26 @@ describe('the sign-in the Worker serves (ADR 0007)', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/html');
     expect(await response.text()).toBe('');
+  });
+});
+
+describe('the standard the Worker serves (ADR 0008)', () => {
+  it('serves the generated standard at /standard and nowhere else', async () => {
+    const cookie = (await signedInCookie()) ?? '';
+    const [standard, direct, head] = await Promise.all([
+      get('/standard', { headers: { cookie } }),
+      get('/standard.html', { headers: { cookie } }),
+      get('/standard', { method: 'HEAD', headers: AUTH }),
+    ]);
+
+    expect(standard.status).toBe(200);
+    const html = await standard.text();
+    expect(html).toContain('<h1>The MCP server standard, v0.1</h1>');
+    expect(html).toContain('<strong>Has clearly defined tools:</strong>');
+    expect(html).toContain('href="https://github.com/unfoldingWord/servant.bible/issues/new"');
+    expect(html).toContain('action="/sign-out"');
+    expect(direct.status).toBe(404);
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe('');
   });
 });

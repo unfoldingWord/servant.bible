@@ -12,6 +12,7 @@ describe('fixed addresses', () => {
     ['/servers.schema.json', { kind: 'schema' }],
     ['/sign-in', { kind: 'sign-in' }],
     ['/sign-out', { kind: 'sign-out' }],
+    ['/standard', { kind: 'standard' }],
   ])('%s', (path, route) => {
     expect(parseRoute(path)).toEqual(route);
   });
@@ -95,6 +96,9 @@ describe('unknown addresses', () => {
     '/mcp/extra',
     '/healthz',
     '/nope',
+    '/standard.html',
+    '/standard/',
+    '/sign-in.html',
   ])('%s', (path) => {
     expect(parseRoute(path)).toEqual({ kind: 'unknown' });
   });

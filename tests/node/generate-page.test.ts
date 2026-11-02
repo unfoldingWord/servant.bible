@@ -8,8 +8,9 @@ import { generatePage } from '../../scripts/generate-page.mjs';
 /**
  * The generator is the build step that turns servers.json into
  * public/index.html. It refuses an invalid list, so a bad entry fails the
- * build rather than reaching a deploy (#9). Paths are injected so the test
- * never touches the real public/ directory.
+ * build rather than reaching a deploy (#9), and refuses a standard it cannot
+ * render (ADR 0008). Paths are injected so the test never touches the real
+ * public/ directory.
  */
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
@@ -65,5 +66,32 @@ describe('generatePage', () => {
     expect(existsSync(outPath)).toBe(false);
     expect(existsSync(path.join(dir, 'sign-in.html'))).toBe(false);
     expect(existsSync(path.join(dir, 'sign-in-failed.html'))).toBe(false);
+    expect(existsSync(path.join(dir, 'standard.html'))).toBe(false);
+  });
+});
+
+describe('generatePage and the standard (ADR 0008)', () => {
+  it('writes the standard beside the page', () => {
+    const dir = path.join(scratch(), 'site');
+    const outPath = path.join(dir, 'index.html');
+
+    generatePage({ serversPath: SERVERS, schemaPath: SCHEMA, outPath });
+
+    const standard = readFileSync(path.join(dir, 'standard.html'), 'utf8');
+    expect(standard).toContain('<h1>The MCP server standard, v0.1</h1>');
+    expect(standard).toContain('action="/sign-out"');
+  });
+
+  it('throws naming the line and writes nothing when the standard has a construct it cannot render', () => {
+    const dir = scratch();
+    const standardPath = path.join(dir, 'mcp-standard.md');
+    const outPath = path.join(dir, 'index.html');
+    writeFileSync(standardPath, '# T\n\n> a quote the renderer does not know\n');
+
+    expect(() =>
+      generatePage({ serversPath: SERVERS, schemaPath: SCHEMA, standardPath, outPath })
+    ).toThrow(/mcp-standard\.md line 3: /);
+    expect(existsSync(outPath)).toBe(false);
+    expect(existsSync(path.join(dir, 'standard.html'))).toBe(false);
   });
 });

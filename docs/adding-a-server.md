@@ -4,7 +4,10 @@ Servant.Bible has one registry: [`servers.json`](../servers.json) at the root
 of this repository. The page, the router, and `/mcp.json` are all built from
 it ([ADR 0003](adr/0003-one-router-worker-at-the-apex.md), decision 5). To add
 a server or a dataset, add one entry to that file in a pull request. There is
-no second place to register it.
+no second place to register it. A listed server is expected to meet the
+[MCP server standard](mcp-standard.md)
+([ADR 0004](adr/0004-hosting-agnostic-registry.md)); say in the pull request
+how it does.
 
 ## Steps
 

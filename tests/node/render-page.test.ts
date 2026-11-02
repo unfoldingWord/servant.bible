@@ -90,17 +90,16 @@ describe('the page-level links', () => {
     );
   });
 
-  it('carries the page-level links', () => {
+  it('carries the page-level links, the standard among them (ADR 0008)', () => {
     expect(html).toContain('href="/mcp.json"');
+    expect(html).toContain('<a class="btn" href="/standard">The standard</a>');
     expect(html).toContain(
       'href="https://github.com/unfoldingWord/servant.bible/blob/main/docs/adding-a-server.md"'
     );
   });
 
-  // The MCP standard (#20) has no route yet, so the page must not link it:
-  // a primary action that answers 404 is worse than no action. #20 adds the
-  // link with the route. Until then every internal link is one the router
-  // answers.
+  // Every internal link is one the router answers: a primary action that
+  // answers 404 is worse than no action.
   it('links only to addresses the router answers', () => {
     const internal = [...html.matchAll(/(?:href|action)="(\/[^"]*)"/g)].map(
       (match) => match[1] ?? ''
@@ -109,7 +108,6 @@ describe('the page-level links', () => {
     for (const href of internal) {
       expect(parseRoute(href).kind, href).not.toBe('unknown');
     }
-    expect(html).not.toContain('/standard');
   });
 });
 

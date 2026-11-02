@@ -8,7 +8,7 @@ answer a translator's question from trusted sources rather than from memory.
 
 The servers are built and run by unfoldingWord and by partners. Servant.Bible is
 the shared front door: one domain, one list of what is available, and one
-quality standard that every server on the list meets.
+[quality standard](docs/mcp-standard.md) that every server on the list meets.
 
 ## Status
 
@@ -23,9 +23,9 @@ than this page.
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`servers.json`](servers.json)               | The registry: every server and dataset, with its backends, operator, and status ([ADR 0005](docs/adr/0005-the-list-carries-datasets-and-a-status.md)). To add one, see [`docs/adding-a-server.md`](docs/adding-a-server.md). |
 | [`servers.schema.json`](servers.schema.json) | The JSON Schema that `pnpm validate:servers` checks the registry against, in the pre-commit hook and in CI.                                                                                                                  |
-| [`docs/`](docs/)                             | Documentation, starting with the [decision records](docs/README.md).                                                                                                                                                         |
+| [`docs/`](docs/)                             | Documentation: the [decision records](docs/README.md) and the [MCP server standard](docs/mcp-standard.md), which the build renders at `/standard`.                                                                           |
 | [`src/`](src/)                               | The router Worker that owns the apex ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).                                                                                                                           |
-| [`public/`](public/)                         | Static assets the Worker serves. `index.html`, `sign-in.html`, and `sign-in-failed.html` are generated on every build (`pnpm generate:page`) and are not committed.                                                          |
+| [`public/`](public/)                         | Static assets the Worker serves. `index.html`, `sign-in.html`, `sign-in-failed.html`, and `standard.html` are generated on every build (`pnpm generate:page`) and are not committed.                                         |
 | [`tests/`](tests/)                           | Vitest tests: `unit/` runs inside the Workers runtime, `node/` covers the dev-time scripts.                                                                                                                                  |
 | [`.github/`](.github/)                       | CI on every pull request, deployments from CI, Dependabot.                                                                                                                                                                   |
 | Issues                                       | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list.                                                                                                                              |
@@ -45,8 +45,10 @@ back, and the router holds no credential for any server
 and the browser view of `/mcp` are behind a shared username and password for
 now ([ADR 0006](docs/adr/0006-the-page-behind-a-shared-password.md)), entered
 once on a sign-in page and kept by a signed cookie for 30 days
-([ADR 0007](docs/adr/0007-a-sign-in-page-and-a-signed-cookie.md)); every
-address a program calls, `/mcp.json` included, is open.
+([ADR 0007](docs/adr/0007-a-sign-in-page-and-a-signed-cookie.md)), as is the
+standard at `/standard`
+([ADR 0008](docs/adr/0008-the-mcp-server-standard-is-published-at-standard.md));
+every address a program calls, `/mcp.json` included, is open.
 
 | Path                                           | Behaviour                                                                                                                                                           |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,6 +60,7 @@ address a program calls, `/mcp.json` included, is open.
 | `/mcp.json`                                    | Always the list as JSON, with `$schema` pointing at `/servers.schema.json`.                                                                                         |
 | `/servers.schema.json`                         | The schema the list is checked against.                                                                                                                             |
 | `/`                                            | The page, generated from `servers.json`. Without the cookie or a Basic header, `401` with the sign-in page.                                                         |
+| `/standard`                                    | The MCP server standard, rendered from `docs/mcp-standard.md`, behind the same sign-in as `/`.                                                                      |
 | `/sign-in`                                     | `GET` the sign-in page; `POST` the form to get the cookie and a `303` to `/`, or `401` with the page again.                                                         |
 | `/sign-out`                                    | `POST` answers `303` to `/`, clearing the cookie when the request carries a valid one.                                                                              |
 | `/health`                                      | The router's version, environment, and the number of servers it routes.                                                                                             |
@@ -88,7 +91,7 @@ pnpm install
 pnpm dev            # wrangler dev on localhost:8787
 pnpm test           # Vitest: tests/unit in the Workers runtime, tests/node under Node
 pnpm validate:servers  # servers.json against servers.schema.json
-pnpm generate:page  # servers.json -> public/index.html; runs before dev, test, and build
+pnpm generate:page  # servers.json and docs/mcp-standard.md -> public/; runs before dev, test, and build
 pnpm lint           # ESLint on src/, tests/, scripts/
 pnpm format:check   # Prettier
 pnpm check          # tsc

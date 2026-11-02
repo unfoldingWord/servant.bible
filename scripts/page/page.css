@@ -868,7 +868,8 @@ code {
   .hero > *,
   .card,
   .tile,
-  .sign-in-card {
+  .sign-in-card,
+  .standard-doc {
     animation: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
 
@@ -922,5 +923,86 @@ code {
 
   .hero {
     padding-block: 3.5rem 2.5rem;
+  }
+}
+
+/* ── The MCP server standard (ADR 0008) ───────────────────────────────── */
+
+.standard {
+  padding-block: 4.5rem 2rem;
+  display: grid;
+  gap: 2.5rem;
+}
+
+.standard-doc {
+  max-width: 72ch;
+  display: grid;
+  gap: 1.1rem;
+  font-size: 1.04rem;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+.standard-doc h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--fg);
+  text-wrap: balance;
+}
+
+.standard-doc h2 {
+  margin: 1.4rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+.standard-doc p {
+  margin: 0;
+}
+
+.standard-doc a {
+  color: var(--accent);
+}
+
+.standard-doc ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.standard-doc li {
+  position: relative;
+  padding: 0.95rem 1.1rem 0.95rem 1.4rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.standard-doc li::before {
+  content: '';
+  position: absolute;
+  inset: 0.95rem auto 0.95rem 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+
+.standard-doc li strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .standard {
+    padding-block: 2.5rem 1.5rem;
   }
 }
