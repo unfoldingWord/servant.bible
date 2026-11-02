@@ -7,8 +7,8 @@ import { signToken } from '../../src/token.js';
 import { echo, echoBinding, fixtureRegistry } from './fixtures.js';
 
 /**
- * The page gate (ADR 0006, amended by ADR 0007): `/` and the HTML view of
- * `/mcp` need the shared credential, presented once through the sign-in page
+ * The page gate (ADR 0006, amended by ADR 0007 and ADR 0008): `/`, the HTML
+ * view of `/mcp`, and `/standard` need the shared credential, presented once through the sign-in page
  * and remembered by a signed cookie, or on every request as a Basic header;
  * nothing a program calls does. The three secrets come from the deploy
  * workflows, so the tests build the env themselves rather than relying on
@@ -91,12 +91,15 @@ describe('a browser without a cookie meets the sign-in page (ADR 0007, decision 
     expect(html).not.toContain('class="form-error"');
   });
 
-  it('answers the HTML view of /mcp the same way', async () => {
-    const response = await get('/mcp', gated, BROWSER);
+  it('answers the HTML view of /mcp and /standard the same way (ADR 0008)', async () => {
+    for (const path of ['/mcp', '/standard']) {
+      const response = await get(path, gated, BROWSER);
 
-    expect(response.status).toBe(401);
-    expect(response.headers.get('www-authenticate')).toBeNull();
-    expect(await response.text()).toContain('action="/sign-in"');
+      expect(response.status, path).toBe(401);
+      expect(response.headers.get('www-authenticate')).toBeNull();
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(await response.text()).toContain('action="/sign-in"');
+    }
   });
 
   it('answers HEAD / with the headers and no body', async () => {
@@ -191,11 +194,12 @@ describe('what the form must be (ADR 0007, decision 2)', () => {
 });
 
 describe('the cookie opens the page (ADR 0007, decision 3)', () => {
-  it('serves / and the HTML view of /mcp to the cookie a sign-in set', async () => {
+  it('serves /, the HTML view of /mcp, and /standard to the cookie a sign-in set', async () => {
     const cookie = await signedIn();
-    const [root, mcp] = await Promise.all([
+    const [root, mcp, standard] = await Promise.all([
       get('/', gated, { ...BROWSER, cookie }),
       get('/mcp', gated, { ...BROWSER, cookie }),
+      get('/standard', gated, { ...BROWSER, cookie }),
     ]);
 
     expect(root.status).toBe(200);
@@ -204,6 +208,10 @@ describe('the cookie opens the page (ADR 0007, decision 3)', () => {
     expect(root.headers.get('set-cookie')).toBeNull();
     expect(mcp.status).toBe(200);
     expect(await root.text()).toContain('Servant.Bible');
+    expect(standard.status).toBe(200);
+    expect(standard.headers.get('content-type')).toContain('text/html');
+    expect(standard.headers.get('cache-control')).toBe('private, no-store');
+    expect(standard.headers.get('set-cookie')).toBeNull();
   });
 
   it('finds the cookie among others and serves HEAD / as HEAD', async () => {
@@ -305,14 +313,20 @@ describe('Basic authentication still works for scripts (ADR 0007, decision 5)', 
     }
   });
 
-  it('refuses a write to / with 405 before looking at any credential', async () => {
-    const response = await router.fetch(
-      new Request('https://servant.bible/', { method: 'POST', headers: BROWSER, body: '{}' }),
-      gated
-    );
+  it('refuses a write to / or /standard with 405 before looking at any credential', async () => {
+    for (const path of ['/', '/standard']) {
+      const response = await router.fetch(
+        new Request(`https://servant.bible${path}`, {
+          method: 'POST',
+          headers: BROWSER,
+          body: '{}',
+        }),
+        gated
+      );
 
-    expect(response.status).toBe(405);
-    expect(response.headers.get('allow')).toBe('GET, HEAD');
+      expect(response.status, path).toBe(405);
+      expect(response.headers.get('allow')).toBe('GET, HEAD');
+    }
   });
 });
 
@@ -328,6 +342,7 @@ describe('the gate fails closed (ADR 0007, decision 7)', () => {
     const responses = await Promise.all([
       get('/', environment, { ...BROWSER, authorization: basic(USERNAME, PASSWORD) }),
       get('/mcp', environment, BROWSER),
+      get('/standard', environment, BROWSER),
       get('/sign-in', environment, BROWSER),
       post('/sign-in', environment, { username: USERNAME, password: PASSWORD }),
       post('/sign-out', environment, {}),

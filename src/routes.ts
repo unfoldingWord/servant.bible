@@ -2,6 +2,7 @@
  * The address grammar of ADR 0002, as a pure parse of the request path:
  *
  *   /                                              page
+ *   /standard                                      the MCP server standard (ADR 0008), gated like the page
  *   /sign-in, /sign-out                            the page gate's own pages (ADR 0007)
  *   /health                                        the router's own health
  *   /mcp, /mcp.json                                the list
@@ -15,6 +16,7 @@
 
 export type Route =
   | { kind: 'page' }
+  | { kind: 'standard' }
   | { kind: 'sign-in' }
   | { kind: 'sign-out' }
   | { kind: 'health' }
@@ -42,6 +44,7 @@ const UNKNOWN: Route = { kind: 'unknown' };
 
 const FIXED = new Map<string, Route>([
   ['/', { kind: 'page' }],
+  ['/standard', { kind: 'standard' }],
   ['/sign-in', { kind: 'sign-in' }],
   ['/sign-out', { kind: 'sign-out' }],
   ['/health', { kind: 'health' }],

@@ -19,6 +19,9 @@ export interface HeadOptions {
   css: string;
 }
 
+/** The repository's URL. */
+export const REPO: string;
+
 /** HTML-escape a value for text or an attribute. */
 export function escape(value: unknown): string;
 
@@ -30,6 +33,12 @@ export function brand(): string;
 
 /** The version line and repository link. */
 export function colophon(version: string): string;
+
+/** The sign-out form (ADR 0007, decision 2). */
+export function signOut(): string;
+
+/** The nav bar around a list of `<li>` items. */
+export function navBar(items: string[]): string;
 
 /** Render the page from a parsed servers.json that already passed the schema. */
 export function renderPage(doc: unknown, options: RenderOptions): string;

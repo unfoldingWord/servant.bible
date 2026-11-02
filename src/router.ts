@@ -9,8 +9,9 @@ import { parseRoute, type Route, type ServerRoute, type ShorthandRoute } from '.
 
 /**
  * The router (ADR 0003, decision 4): the page at `/` with its sign-in and
- * sign-out (ADR 0007), the list at `/mcp` and `/mcp.json`, and forwarding
- * for `/org/...` and `/s/...`. Built from its dependencies so tests can hand
+ * sign-out (ADR 0007), the standard at `/standard` behind the same gate
+ * (ADR 0008), the list at `/mcp` and `/mcp.json`, and forwarding for
+ * `/org/...` and `/s/...`. Built from its dependencies so tests can hand
  * it a fixture registry and stub backends; index.ts builds the real one from
  * servers.json.
  */
@@ -42,6 +43,8 @@ interface Ctx {
 }
 
 const READ_METHODS = ['GET', 'HEAD'];
+/** The generated standard, as the generator names it beside index.html (ADR 0008). */
+const STANDARD_ASSET = '/standard.html';
 
 function isFetcher(value: unknown): value is Fetcher {
   return (
@@ -85,30 +88,31 @@ function health({ deps, env }: Ctx): Response {
 }
 
 /**
- * The pages the gate answers with, from the asset layer: the page as `/`
- * whatever the request path was, and the two sign-in pages. HEAD stays HEAD
- * so a refused HEAD has no body; any other method fetches with GET, so a
- * failed POST to /sign-in can still show the form.
+ * The pages the gate answers with, from the asset layer: the gated page at
+ * `pagePath` (the page as `/` whatever the request path was, or the
+ * standard) and the two sign-in pages. HEAD stays HEAD so a refused HEAD has
+ * no body; any other method fetches with GET, so a failed POST to /sign-in
+ * can still show the form.
  */
-function pageAssets({ env, request, url }: Ctx): PageAssets {
+function pageAssets({ env, request, url }: Ctx, pagePath = '/'): PageAssets {
   const method = request.method === 'HEAD' ? 'HEAD' : 'GET';
   const asset = (path: string, headers?: Headers) =>
     env.ASSETS.fetch(
       new Request(new URL(path, url), { method, ...(headers === undefined ? {} : { headers }) })
     );
   return {
-    page: () => asset('/', request.headers),
+    page: () => asset(pagePath, request.headers),
     signIn: (failed) => asset(failed ? '/sign-in-failed.html' : '/sign-in.html'),
   };
 }
 
 /**
- * The page, behind the gate (ADR 0006, ADR 0007). Callers apply `readOnly`
- * first: a write is refused before the credential is looked at, and never
- * turned into a GET.
+ * The page, behind the gate (ADR 0006, ADR 0007), or the standard behind the
+ * same gate (ADR 0008). Callers apply `readOnly` first: a write is refused
+ * before the credential is looked at, and never turned into a GET.
  */
-function page(ctx: Ctx): Promise<Response> {
-  return gated(ctx.env, ctx.request, pageAssets(ctx));
+function page(ctx: Ctx, pagePath = '/'): Promise<Response> {
+  return gated(ctx.env, ctx.request, pageAssets(ctx, pagePath));
 }
 
 function list(ctx: Ctx, explicitJson: boolean): Response | Promise<Response> {
@@ -150,6 +154,8 @@ function fixed(route: Route, ctx: Ctx): Response | Promise<Response> | undefined
   switch (route.kind) {
     case 'page':
       return readOnly(ctx.request, () => page(ctx));
+    case 'standard':
+      return readOnly(ctx.request, () => page(ctx, STANDARD_ASSET));
     case 'sign-in':
       return signInRoute(ctx);
     case 'sign-out':

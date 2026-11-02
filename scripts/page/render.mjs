@@ -6,11 +6,12 @@
  * `escape`, in text and in attributes alike. The page shows what a reader
  * needs to use a server (ADR 0002 addresses, versions, transport, resources,
  * operator per ADR 0004, status per ADR 0005) and never a backend, a binding,
- * or whether a server wants a credential.
+ * or whether a server wants a credential. It links the standard every listed
+ * server is expected to meet (ADR 0008).
  */
 
 const SITE = 'https://servant.bible';
-const REPO = 'https://github.com/unfoldingWord/servant.bible';
+export const REPO = 'https://github.com/unfoldingWord/servant.bible';
 const ADD_A_SERVER = `${REPO}/blob/main/docs/adding-a-server.md`;
 const UNFOLDINGWORD = 'unfoldingWord';
 /** The org slug that is unfoldingWord: the canonical operator identity (ADR 0002). */
@@ -182,17 +183,23 @@ export function brand() {
   return `<a class="brand" href="/"><span class="brand-dot"></span>Servant.Bible</a>`;
 }
 
-/** Sign out clears the cookie (ADR 0007, decision 2); a form, because it changes state. */
-function signOut() {
+/** Sign out clears the cookie (ADR 0007, decision 2); a form, because it changes state. Shared with the standard's page. */
+export function signOut() {
   return `<form class="sign-out" method="post" action="/sign-out"><button type="submit">Sign out</button></form>`;
+}
+
+/** The nav bar around a list of `<li>` items; shared with the standard's page. */
+export function navBar(items) {
+  return `<nav class="nav"><div class="nav-inner">${brand()}<ul class="nav-links">${items.join('')}</ul></div></nav>`;
 }
 
 function nav(entries) {
   const present = SECTIONS.filter((spec) => entries.some(spec.pick));
   const items = present.map((spec) => `<li><a href="#${spec.id}">${spec.title}</a></li>`);
+  items.push(`<li><a href="/standard">Standard</a></li>`);
   items.push(`<li class="optional"><a href="${REPO}">GitHub</a></li>`);
   items.push(`<li>${signOut()}</li>`);
-  return `<nav class="nav"><div class="nav-inner">${brand()}<ul class="nav-links">${items.join('')}</ul></div></nav>`;
+  return navBar(items);
 }
 
 function stat(n, label) {
@@ -209,10 +216,9 @@ function stats(entries) {
 function hero(entries, version) {
   const lead =
     'Servant.Bible lists MCP servers that give AI agents access to <strong>trusted Bible resources</strong> — translation helps, study notes, dictionaries, and texts. Each server on this list meets a common quality standard, so a tool like <strong>BT Servant</strong> can answer a translator’s question from the actual sources, not from memory.';
-  // The MCP standard (#20) gets its link here once its route exists; a
-  // primary action that answers 404 is worse than none.
   const ctas = [
     `<a class="btn btn-primary" href="/mcp.json">Get the list <code>/mcp.json</code></a>`,
+    `<a class="btn" href="/standard">The standard</a>`,
     `<a class="btn" href="${ADD_A_SERVER}">Add a server</a>`,
   ].join('');
   return `<header class="hero"><span class="eyebrow">MCP registry · v${escape(version)}</span><h1>Bible resources <span class="glow">any agent</span> can trust.</h1><p class="lead">${lead}</p><div class="cta-row">${ctas}</div>${stats(entries)}</header>`;
