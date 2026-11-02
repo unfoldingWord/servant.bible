@@ -224,9 +224,12 @@ function hero(entries, version) {
   return `<header class="hero"><span class="eyebrow">MCP registry · v${escape(version)}</span><h1>Bible resources <span class="glow">any agent</span> can trust.</h1><p class="lead">${lead}</p><div class="cta-row">${ctas}</div>${stats(entries)}</header>`;
 }
 
-/** The version line and repository link; shared with the sign-in page. */
-export function colophon(version) {
-  return `<footer class="colophon"><span>Servant.Bible ${escape(version)} · generated from servers.json</span>${link(REPO, 'github.com/unfoldingWord/servant.bible')}</footer>`;
+/**
+ * The version line and repository link; shared with the sign-in page and the
+ * standard, which names its own source.
+ */
+export function colophon(version, source = 'servers.json') {
+  return `<footer class="colophon"><span>Servant.Bible ${escape(version)} · generated from ${escape(source)}</span>${link(REPO, 'github.com/unfoldingWord/servant.bible')}</footer>`;
 }
 
 /**

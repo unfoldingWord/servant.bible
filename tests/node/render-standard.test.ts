@@ -44,7 +44,9 @@ describe('parseStandard', () => {
       { type: 'paragraph', text: 'Trailing & "quotes" and \'apostrophes\'.', line: 11 },
     ]);
   });
+});
 
+describe('parseStandard refusals', () => {
   it.each([
     ['### Three', 'a deeper heading'],
     ['> quoted', 'a block quote'],
@@ -57,6 +59,13 @@ describe('parseStandard', () => {
     ['---', 'a rule'],
   ])('refuses %s (%s) naming the line', (line) => {
     expect(() => parseStandard(`# T\n\nok\n\n${line}\n`)).toThrow(/line 5: /);
+  });
+
+  // Codex review on #42: a paragraph joins its lines, so the error must still
+  // name the line the construct is on, not the line the paragraph starts on.
+  it('names the continuation line, not the paragraph start, for an inline failure', () => {
+    expect(() => parseStandard('# T\n\nfirst\ncontinued with <b>x</b>\n')).toThrow(/line 4: /);
+    expect(() => parseStandard('# T\n\nfirst\nsecond\nthird **dangling\n')).toThrow(/line 5: /);
   });
 
   it('refuses a text line right after a list item: Markdown would continue the item', () => {
@@ -128,11 +137,16 @@ describe('the real docs/mcp-standard.md', () => {
     expect(html).toContain('<meta name="viewport"');
     expect(html).toContain('<title>MCP server standard · Servant.Bible</title>');
     expect(html).toContain(OPTIONS.css);
-    expect(html).toContain('Servant.Bible 9.9.9');
+    expect(html).toContain('Servant.Bible 9.9.9 · generated from docs/mcp-standard.md');
+    expect(html).not.toContain('generated from servers.json');
     expect(html).not.toContain('<script');
     const links = html.match(/<link[^>]*>/g) ?? [];
     for (const link of links) expect(link).toMatch(/href="https:\/\/fonts\.googleapis\.com\//);
   });
+});
+
+describe('the standard page’s links', () => {
+  const html = renderStandard({ ...OPTIONS, markdown: STANDARD });
 
   it('carries the nav home and the sign-out form, like the page', () => {
     expect(html).toContain('<a class="brand" href="/">');

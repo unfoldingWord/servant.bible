@@ -13,6 +13,8 @@
 import { REPO, colophon, documentHead, escape, navBar, signOut } from './render.mjs';
 
 const TITLE = 'MCP server standard · Servant.Bible';
+/** What the colophon says this page is generated from. */
+const SOURCE = 'docs/mcp-standard.md';
 const DESCRIPTION =
   'What makes a good MCP server for Bible data: the standard every server listed on Servant.Bible is expected to meet.';
 
@@ -51,7 +53,7 @@ function inline(text, line) {
 }
 
 /** What one line is: blank, a heading, a list item, or text. Throws on anything else. */
-function classify(text, line) {
+function kindOf(text, line) {
   if (text.trim() === '') return { kind: 'blank' };
   for (const [pattern, level] of HEADINGS) {
     const match = pattern.exec(text);
@@ -63,11 +65,21 @@ function classify(text, line) {
   return { kind: 'text', text };
 }
 
+/** `kindOf`, with the line's inline constructs checked so an error names this line. */
+function classify(text, line) {
+  const seen = kindOf(text, line);
+  if (seen.kind !== 'blank') inline(seen.text, line);
+  return seen;
+}
+
 /**
  * The document as blocks: `heading` (with `level`), `paragraph` (lines
  * joined with a space), and `list` (its items). Each block carries the line
- * it starts on. A text line straight after a list item is refused: Markdown
- * would make it part of the item, and this renderer would not.
+ * it starts on. Inline constructs are checked here, line by line, so an
+ * error names the line the construct is on even inside a joined paragraph;
+ * rendering a parsed block cannot fail. A text line straight after a list
+ * item is refused: Markdown would make it part of the item, and this
+ * renderer would not.
  */
 export function parseStandard(markdown) {
   const blocks = [];
@@ -118,7 +130,7 @@ export function renderStandard(options) {
     `<li>${signOut()}</li>`,
   ];
   const doc = `<article class="standard-doc"><span class="eyebrow">Quality standard</span>${article}</article>`;
-  const main = `<main class="scroll"><div class="page standard">${doc}${colophon(version)}</div></main>`;
+  const main = `<main class="scroll"><div class="page standard">${doc}${colophon(version, SOURCE)}</div></main>`;
   return [
     ...documentHead({ title: TITLE, description: DESCRIPTION, css }),
     '<body>',
