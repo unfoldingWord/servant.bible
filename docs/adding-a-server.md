@@ -11,18 +11,19 @@ how it does.
 
 ## Steps
 
-1. Branch from `main`.
+1. Branch from `develop`.
 2. Copy the closest existing entry in `servers.json` and change every field.
 3. Run `pnpm validate:servers`. It checks the entry against
    [`servers.schema.json`](../servers.schema.json) and the three rules the
    schema cannot express (unique `org` + `server`, unique `shorthand`,
    `current` names a version). The same check runs in the pre-commit hook and
    in CI, so an invalid entry cannot be merged.
-4. Open a pull request. Say who operates the server and link the proof that
-   its backend answers an MCP `initialize` and `tools/list`.
+4. Open a pull request against `develop`. Say who operates the server and
+   link the proof that its backend answers an MCP `initialize` and `tools/list`.
 5. After the merge, the staging router at `staging.servant.bible` serves the
    entry first ([ADR 0003](adr/0003-one-router-worker-at-the-apex.md),
-   decision 3). Production at `servant.bible` follows by manual deploy.
+   decision 3). Production at `servant.bible` follows with the next release
+   ([ADR 0009](adr/0009-two-branches-develop-and-main.md)).
 
 ## Fields
 

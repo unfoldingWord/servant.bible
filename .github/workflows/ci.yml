@@ -2,11 +2,37 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
+  # Branching model (ADR 0009): develop is the integration branch and staging
+  # follows it; main is the release branch and production deploys from it.
+  # main only ever receives develop (a release) or a hotfix/* branch. Any other
+  # pull request into main is refused here, so a feature branch cannot skip
+  # integration and staging.
+  release-source:
+    name: Release Source
+    if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require develop or hotfix/* as the source of a pull request into main
+        # The pull request's author picks the branch name, so it reaches the
+        # script through env, never by interpolation: a crafted name cannot
+        # run shell commands here.
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          echo "Pull request into main from '${HEAD_REF}'"
+          case "${HEAD_REF}" in
+            develop|hotfix/*) echo "ok" ;;
+            *)
+              echo "::error::Pull requests into main must come from develop (a release) or hotfix/* (an emergency fix). Open this one against develop instead."
+              exit 1 ;;
+          esac
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest

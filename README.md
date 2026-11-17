@@ -77,10 +77,11 @@ The router logs one structured line per forwarded request (`org`, `server`,
 `version`, method, upstream status, and milliseconds to the upstream headers)
 and never a request or response body.
 
-One `servers.json` serves both deployments. A merge to `main` deploys staging,
-so staging always runs the newest list; production follows when the Deploy
-workflow is dispatched. That is how a new server or version is proven on
-staging first (ADR 0003, decision 3).
+One `servers.json` serves both deployments. A merge to `develop` deploys
+staging, so staging always runs the newest list; production follows when
+`develop` is released into `main` and the Deploy workflow is dispatched on the
+release tag. That is how a new server or version is proven on staging first
+(ADR 0003, decision 3; [ADR 0009](docs/adr/0009-two-branches-develop-and-main.md)).
 
 ## Development
 
@@ -102,10 +103,17 @@ pnpm audit:all      # full tree, high or critical fails
 
 The pre-commit hook runs the same gates. CI runs them on every pull request.
 
-Deployments run from CI only. A merge to `main` deploys staging to
-`staging.servant.bible`; production deploys to `servant.bible` by manual
-dispatch of the Deploy workflow. Both are Workers Custom Domains declared in
-`wrangler.toml`, and `tests/node/wrangler-config.test.ts` pins which names each
+There are two long-lived branches
+([ADR 0009](docs/adr/0009-two-branches-develop-and-main.md)). `develop` is the
+default branch: branch from it and open pull requests against it. `main` is the
+release branch and receives only `develop` or a `hotfix/*` branch.
+
+Deployments run from CI only. A merge to `develop` deploys staging to
+`staging.servant.bible`. A release is a pull request from `develop` into
+`main`; CI tags the merged commit `v<version>`, and production deploys to
+`servant.bible` by manual dispatch of the Deploy workflow on that tag
+(`gh workflow run deploy.yml --ref v<version>`). Both are Workers Custom
+Domains declared in `wrangler.toml`, and `tests/node/wrangler-config.test.ts` pins which names each
 deployment owns. The `workers.dev` names of both deployments stay on as
 fallbacks for now. Each deployment reports its version at `/health`.
 
