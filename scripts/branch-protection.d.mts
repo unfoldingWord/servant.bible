@@ -11,7 +11,9 @@ export interface BranchRules {
   codeOwnerReview: boolean;
   lastPushApproval: boolean;
   dismissStaleReviews: boolean;
+  /** Actors: a user's login, `team:<slug>`, or `app:<slug>`. */
   mayMergeWithoutReview: string[];
+  /** Actors, as above; null when pushes are not restricted. */
   pushRestrictedTo: string[] | null;
   linearHistory: boolean;
   conversationsResolved: boolean;
@@ -24,7 +26,10 @@ export interface RulesetRules {
   name: string;
   enforcement: string;
   branches: string[];
+  excludedBranches: string[];
   mergeMethods: string[];
+  /** Each as `<actor_type>:<actor_id>:<bypass_mode>`. */
+  bypassActors: string[];
 }
 
 /** GitHub's answer to GET .../branches/<branch>/protection, as BranchRules. */

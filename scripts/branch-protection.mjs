@@ -24,8 +24,30 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RULES_FILE = path.join(REPO_ROOT, '.github', 'branch-protection.json');
 
-const logins = (list) => (list?.users ?? []).map((user) => user.login);
-const actors = (users) => ({ users, teams: [], apps: [] });
+/**
+ * GitHub names three kinds of actor in a bypass or push list: users, teams,
+ * and apps. All three are read, so a team or an app someone adds later shows
+ * up as a difference. In the file a user is its login, a team is
+ * `team:<slug>`, and an app is `app:<slug>`.
+ */
+function readActors(list) {
+  return [
+    ...(list?.users ?? []).map((user) => user.login),
+    ...(list?.teams ?? []).map((team) => `team:${team.slug}`),
+    ...(list?.apps ?? []).map((app) => `app:${app.slug}`),
+  ];
+}
+
+/** The file's actor names, split back into the three lists GitHub takes. */
+function actors(names) {
+  const slugs = (prefix) =>
+    names.filter((n) => n.startsWith(prefix)).map((n) => n.slice(prefix.length));
+  return {
+    users: names.filter((n) => !n.includes(':')),
+    teams: slugs('team:'),
+    apps: slugs('app:'),
+  };
+}
 
 /** Whether one of GitHub's `{ enabled }` settings is on. */
 const on = (setting) => setting?.enabled === true;
@@ -40,7 +62,7 @@ function readReviews(reviews) {
     codeOwnerReview: reviews?.require_code_owner_reviews === true,
     lastPushApproval: reviews?.require_last_push_approval === true,
     dismissStaleReviews: reviews?.dismiss_stale_reviews === true,
-    mayMergeWithoutReview: logins(reviews?.bypass_pull_request_allowances),
+    mayMergeWithoutReview: readActors(reviews?.bypass_pull_request_allowances),
   };
 }
 
@@ -49,7 +71,7 @@ export function readProtection(live) {
   return {
     ...readChecks(live.required_status_checks),
     ...readReviews(live.required_pull_request_reviews),
-    pushRestrictedTo: live.restrictions ? logins(live.restrictions) : null,
+    pushRestrictedTo: live.restrictions ? readActors(live.restrictions) : null,
     linearHistory: on(live.required_linear_history),
     conversationsResolved: on(live.required_conversation_resolution),
     appliesToAdmins: on(live.enforce_admins),
@@ -78,15 +100,29 @@ export function protectionPayload(rules) {
   };
 }
 
+/** A list GitHub may leave out, as a list. */
+const listOf = (value) => (Array.isArray(value) ? value : []);
+
 /** GitHub's answer to GET .../rulesets/<id>, in the file's terms. */
 export function readRuleset(live) {
-  const rule = (live.rules ?? []).find((r) => r.type === 'pull_request');
+  const refs = live.conditions?.ref_name;
+  const rule = listOf(live.rules).find((r) => r.type === 'pull_request');
   return {
     name: live.name,
     enforcement: live.enforcement,
-    branches: live.conditions?.ref_name?.include ?? [],
-    mergeMethods: rule?.parameters?.allowed_merge_methods ?? [],
+    branches: listOf(refs?.include),
+    excludedBranches: listOf(refs?.exclude),
+    mergeMethods: listOf(rule?.parameters?.allowed_merge_methods),
+    bypassActors: listOf(live.bypass_actors).map(
+      (a) => `${a.actor_type}:${a.actor_id}:${a.bypass_mode}`
+    ),
   };
+}
+
+/** `<actor_type>:<actor_id>:<bypass_mode>` from the file, as GitHub's object. */
+function bypassActor(text) {
+  const [actorType, actorId, bypassMode] = text.split(':');
+  return { actor_id: Number(actorId), actor_type: actorType, bypass_mode: bypassMode };
 }
 
 /**
@@ -98,7 +134,8 @@ export function rulesetPayload(rules) {
     name: rules.name,
     target: 'branch',
     enforcement: rules.enforcement,
-    conditions: { ref_name: { include: rules.branches, exclude: [] } },
+    conditions: { ref_name: { include: rules.branches, exclude: rules.excludedBranches } },
+    bypass_actors: rules.bypassActors.map(bypassActor),
     rules: [
       {
         type: 'pull_request',

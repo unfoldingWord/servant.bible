@@ -77,6 +77,10 @@ repositories work the same way and a contributor learns the rules once.
      match. Reading branch protection needs admin access, which the token CI
      gets does not have, so the check is not a CI job.
 
+   The check reads every kind of actor GitHub allows in a bypass or push
+   list (users, teams, and apps) and the ruleset's own bypass list and
+   excluded branches, so a later grant to any of them shows as a difference.
+
    The file is the record. In short:
    - `develop`: pull request required, the five CI checks required and up to
      date, one approving review, stale reviews dismissed, linear history,

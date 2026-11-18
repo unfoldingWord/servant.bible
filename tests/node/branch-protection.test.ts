@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type BranchRules,
+  type RulesetRules,
   differences,
   protectionPayload,
   readProtection,
@@ -20,7 +21,7 @@ import {
 
 interface Recorded {
   branches: { develop: BranchRules; main: BranchRules };
-  ruleset: { name: string; enforcement: string; branches: string[]; mergeMethods: string[] };
+  ruleset: RulesetRules;
 }
 
 const RECORDED = JSON.parse(readFileSync('.github/branch-protection.json', 'utf8')) as Recorded;
@@ -30,6 +31,7 @@ const CI_CHECKS = ['Build', 'Lint', 'Security Audit', 'Test', 'Type Check'];
 /** GitHub's GET answer for a branch protected exactly as `rules` says. */
 function liveProtection(rules: BranchRules) {
   const logins = (names: string[]) => names.map((login) => ({ login, id: 1 }));
+  const none: { slug: string; id: number }[] = [];
   return {
     url: 'https://api.github.com/x',
     required_status_checks: { strict: rules.checksUpToDate, contexts: [...rules.checks].reverse() },
@@ -41,12 +43,18 @@ function liveProtection(rules: BranchRules) {
       required_approving_review_count: rules.approvals,
       bypass_pull_request_allowances: {
         users: logins(rules.mayMergeWithoutReview),
-        teams: [],
-        apps: [],
+        teams: [...none],
+        apps: [...none],
       },
     },
     ...(rules.pushRestrictedTo
-      ? { restrictions: { users: logins(rules.pushRestrictedTo), teams: [], apps: [] } }
+      ? {
+          restrictions: {
+            users: logins(rules.pushRestrictedTo),
+            teams: [...none],
+            apps: [...none],
+          },
+        }
       : {}),
     required_linear_history: { enabled: rules.linearHistory },
     required_conversation_resolution: { enabled: rules.conversationsResolved },
@@ -120,6 +128,59 @@ describe('readProtection', () => {
   });
 });
 
+/**
+ * Codex review of #54: GitHub lets a team or an app bypass review or push to
+ * a restricted branch, not only a user. A check that read users alone would
+ * report a match after someone added one, which is the drift it exists to find.
+ */
+describe('teams and apps count as actors too', () => {
+  const team = { slug: 'release-managers', id: 7 };
+  const app = { slug: 'some-bot', id: 9 };
+
+  it.each([
+    ['a team', { teams: [team] }, 'team:release-managers'],
+    ['an app', { apps: [app] }, 'app:some-bot'],
+  ])('reports %s allowed to merge into main without review', (_, extra, name) => {
+    const live = liveProtection(main);
+    Object.assign(live.required_pull_request_reviews.bypass_pull_request_allowances, extra);
+    expect(differences('main', main, readProtection(live))).toEqual([
+      `main mayMergeWithoutReview: want ["IanLindsley"], have ["IanLindsley","${name}"]`,
+    ]);
+  });
+
+  it.each([
+    ['a team', { teams: [team] }, 'team:release-managers'],
+    ['an app', { apps: [app] }, 'app:some-bot'],
+  ])('reports %s allowed to push to main', (_, extra, name) => {
+    const live = liveProtection(main);
+    Object.assign(live.restrictions ?? {}, extra);
+    expect(differences('main', main, readProtection(live))).toEqual([
+      `main pushRestrictedTo: want ["IanLindsley"], have ["IanLindsley","${name}"]`,
+    ]);
+  });
+
+  it('reports a team allowed to merge into develop without review', () => {
+    const live = liveProtection(develop);
+    Object.assign(live.required_pull_request_reviews.bypass_pull_request_allowances, {
+      teams: [team],
+    });
+    expect(differences('develop', develop, readProtection(live))).toHaveLength(1);
+  });
+
+  it('sends a recorded team or app to GitHub as one, not as a user', () => {
+    const rules = {
+      ...main,
+      pushRestrictedTo: ['IanLindsley', 'team:release-managers', 'app:some-bot'],
+    };
+    expect(protectionPayload(rules).restrictions).toEqual({
+      users: ['IanLindsley'],
+      teams: ['release-managers'],
+      apps: ['some-bot'],
+    });
+    expect(differences('main', rules, readProtection(liveProtection(main)))).toHaveLength(1);
+  });
+});
+
 describe('differences', () => {
   it('says so when the branch is not protected at all', () => {
     expect(differences('develop', develop, null)).toEqual(['develop: not configured']);
@@ -170,6 +231,38 @@ describe('the ruleset', () => {
     const body = rulesetPayload(RECORDED.ruleset);
     expect(body).toMatchObject({ target: 'branch', enforcement: 'active' });
     expect(differences('ruleset', RECORDED.ruleset, readRuleset(body))).toEqual([]);
+  });
+
+  it('records that nobody may bypass it and no branch is excluded', () => {
+    expect(RECORDED.ruleset.bypassActors).toEqual([]);
+    expect(RECORDED.ruleset.excludedBranches).toEqual([]);
+  });
+
+  it('is read as different when someone may bypass it', () => {
+    const live = {
+      ...rulesetPayload(RECORDED.ruleset),
+      bypass_actors: [{ actor_id: 5, actor_type: 'RepositoryRole', bypass_mode: 'always' }],
+    };
+    expect(differences('ruleset', RECORDED.ruleset, readRuleset(live))).toEqual([
+      'ruleset bypassActors: want [], have ["RepositoryRole:5:always"]',
+    ]);
+  });
+
+  it('is read as different when a branch is excluded from it', () => {
+    const live = rulesetPayload(RECORDED.ruleset) as {
+      conditions: { ref_name: { exclude: string[] } };
+    };
+    live.conditions.ref_name.exclude = ['refs/heads/main'];
+    expect(differences('ruleset', RECORDED.ruleset, readRuleset(live))).toEqual([
+      'ruleset excludedBranches: want [], have ["refs/heads/main"]',
+    ]);
+  });
+
+  it('sends a recorded bypass actor back to GitHub in its own shape', () => {
+    const rules = { ...RECORDED.ruleset, bypassActors: ['Team:12:pull_request'] };
+    expect(rulesetPayload(rules).bypass_actors).toEqual([
+      { actor_id: 12, actor_type: 'Team', bypass_mode: 'pull_request' },
+    ]);
   });
 
   it('is read as different when squash is also allowed', () => {
