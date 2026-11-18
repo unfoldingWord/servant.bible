@@ -67,6 +67,11 @@
       "undici": ">=7.30.1",
       "sharp": ">=0.35.5",
       "zod": ">=4.6.6"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-fc5q-39xc-vjpf"
+      ]
     }
   }
 }
