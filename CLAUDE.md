@@ -55,7 +55,11 @@ pull request (ADR 0009).
   same day so `develop` stays ahead.
 
 Both branches are protected: CI must pass, force pushes and deletions are
-refused, and the rules apply to administrators too.
+refused, and the rules apply to administrators too. The rules are recorded in
+`.github/branch-protection.json`. `pnpm protection:check` compares them with
+the live settings. Change them only by changing that file in a pull request;
+`pnpm protection:apply` is the user's step, or Claude's only on an explicit
+yes.
 
 ## Never deploy by hand
 

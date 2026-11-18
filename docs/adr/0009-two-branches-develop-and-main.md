@@ -65,20 +65,38 @@ repositories work the same way and a contributor learns the rules once.
 7. **A hotfix** branches from `main` as `hotfix/<name>`, bumps the version,
    and merges into `main`. A pull request from `main` into `develop` follows
    the same day, so `develop` stays ahead of `main`.
-8. **Branch protection matches BT Servant's worker.** These are GitHub
-   settings, not files, so they are recorded here:
+8. **Branch protection matches BT Servant's worker, and is recorded in a
+   file.** The rules are GitHub settings, not files GitHub reads, so they are
+   written down in
+   [`.github/branch-protection.json`](../../.github/branch-protection.json)
+   and set from it by `scripts/branch-protection.mjs`:
+   - `pnpm protection:apply` sets both branches and the ruleset from the
+     file. A person with admin access runs it after the file changes.
+   - `pnpm protection:check` reads the live settings and fails on any
+     difference, so anyone with admin access can prove the settings still
+     match. Reading branch protection needs admin access, which the token CI
+     gets does not have, so the check is not a CI job.
+
+   The file is the record. In short:
    - `develop`: pull request required, the five CI checks required and up to
-     date, one approving review, linear history, conversations resolved, no
-     force pushes or deletions, rules apply to administrators.
+     date, one approving review, stale reviews dismissed, linear history,
+     conversations resolved, no force pushes or deletions, rules apply to
+     administrators.
    - `main`: pull request required, the five CI checks plus `Release Source`
      required, one approving review from a code owner
      ([`.github/CODEOWNERS`](../../.github/CODEOWNERS)), approval of the last
-     push, conversations resolved, pushes restricted to the repository owner,
-     no force pushes or deletions, rules apply to administrators. A ruleset
-     allows only merge commits.
+     push, stale reviews dismissed, conversations resolved, pushes restricted
+     to the repository owner, no force pushes or deletions, rules apply to
+     administrators. A ruleset allows only merge commits.
    - On both, the repository owner may merge without the approving review, as
      in BT Servant's worker. The review loop in `CLAUDE.md` still applies to
      every pull request.
+
+   These settings are a precondition of the model, not a follow-up: without
+   them the `Release Source` job reports a failure that nothing requires, and
+   a feature branch could still merge into `main`. They were applied on
+   2026-11-18, before the pull request that introduced this record merged, and
+   `pnpm protection:check` passed against the live repository.
 
 ## Consequences
 
@@ -88,6 +106,11 @@ repositories work the same way and a contributor learns the rules once.
   `v*` tag.
 - Tests in `tests/node/workflows-branching.test.ts` pin the trigger and guard
   of all four workflows, so a later edit cannot quietly undo this.
+  `tests/node/branch-protection.test.ts` pins the recorded rules and how the
+  script reads and writes them.
+- The settings can still drift: someone with admin access can change them in
+  GitHub's settings pages without touching the file. `pnpm protection:check`
+  finds that, but only when someone runs it.
 - Dependabot opens its pull requests against the default branch, so it
   follows `develop` with no change to its configuration.
 - **A limit worth knowing.** A manual dispatch runs the workflow file from the

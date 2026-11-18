@@ -1,0 +1,41 @@
+{
+  "repository": "unfoldingWord/servant.bible",
+  "branches": {
+    "develop": {
+      "checks": ["Build", "Lint", "Security Audit", "Test", "Type Check"],
+      "checksUpToDate": true,
+      "approvals": 1,
+      "codeOwnerReview": false,
+      "lastPushApproval": false,
+      "dismissStaleReviews": true,
+      "mayMergeWithoutReview": ["IanLindsley"],
+      "pushRestrictedTo": null,
+      "linearHistory": true,
+      "conversationsResolved": true,
+      "appliesToAdmins": true,
+      "forcePushes": false,
+      "deletions": false
+    },
+    "main": {
+      "checks": ["Build", "Lint", "Release Source", "Security Audit", "Test", "Type Check"],
+      "checksUpToDate": false,
+      "approvals": 1,
+      "codeOwnerReview": true,
+      "lastPushApproval": true,
+      "dismissStaleReviews": true,
+      "mayMergeWithoutReview": ["IanLindsley"],
+      "pushRestrictedTo": ["IanLindsley"],
+      "linearHistory": false,
+      "conversationsResolved": true,
+      "appliesToAdmins": true,
+      "forcePushes": false,
+      "deletions": false
+    }
+  },
+  "ruleset": {
+    "name": "main: release merges use a merge commit",
+    "enforcement": "active",
+    "branches": ["refs/heads/main"],
+    "mergeMethods": ["merge"]
+  }
+}

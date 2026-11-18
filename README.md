@@ -99,6 +99,7 @@ pnpm check          # tsc
 pnpm build          # wrangler build
 pnpm audit:prod     # production tree, any severity fails
 pnpm audit:all      # full tree, high or critical fails
+pnpm protection:check  # live branch protection against .github/branch-protection.json (needs admin)
 ```
 
 The pre-commit hook runs the same gates. CI runs them on every pull request.
