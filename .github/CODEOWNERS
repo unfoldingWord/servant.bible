@@ -1,0 +1,3 @@
+# Every path: a pull request into main (a release or a hotfix) needs this
+# review. develop does not require code-owner review. See ADR 0009.
+* @IanLindsley

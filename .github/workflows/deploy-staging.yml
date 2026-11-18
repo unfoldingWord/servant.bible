@@ -1,12 +1,24 @@
 name: Deploy Staging
 
-# Staging deploys automatically after CI passes on main (a merge). Never on a
-# pull request: a PR cannot change what staging serves until it is merged.
+# Staging follows develop (ADR 0009): it deploys after CI passes on a push to
+# develop, which is a merge. Never on a pull request: a pull request cannot
+# change what staging serves until it is merged.
+#
+# The branch filter alone is not enough. A release pull request (develop into
+# main) runs CI with head branch develop too, so the job also requires the CI
+# run to have been triggered by a push. Otherwise each merge into develop
+# would deploy twice while a release is open.
+#
+# Ordering: two pushes to develop can finish CI in either order. So only one
+# staging deploy runs at a time (queued, never cancelled), and once a run
+# holds the slot it deploys only if its commit is still the tip of develop.
+# An older CI run that finishes after a newer one skips, and staging is never
+# put back on a stale commit.
 on:
   workflow_run:
     workflows: ['CI']
     types: [completed]
-    branches: [main]
+    branches: [develop]
 
 concurrency:
   group: deploy-staging
@@ -16,25 +28,47 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+          # Full history, so the guard below can compare against develop's tip.
+          fetch-depth: 0
+
+      - name: Skip if a newer push to develop exists
+        id: tip
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin develop
+          tip="$(git rev-parse origin/develop)"
+          if [ "${tip}" != "${HEAD_SHA}" ]; then
+            echo "::notice::Skipping: ${HEAD_SHA} is no longer the tip of develop (${tip}). The newer push deploys instead."
+            echo "superseded=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "ok: ${HEAD_SHA} is the tip of develop"
+            echo "superseded=false" >> "${GITHUB_OUTPUT}"
+          fi
 
       - name: Install pnpm
+        if: steps.tip.outputs.superseded != 'true'
         uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
+        if: steps.tip.outputs.superseded != 'true'
         uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
 
       - name: Install dependencies
+        if: steps.tip.outputs.superseded != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build
+        if: steps.tip.outputs.superseded != 'true'
         run: pnpm run build
 
       # The page credential and the cookie secret (ADR 0006, ADR 0007) are
@@ -42,6 +76,7 @@ jobs:
       # else. An empty value would deploy a gate that answers 503 to everyone,
       # so refuse before uploading anything.
       - name: Assert the page credential is present
+        if: steps.tip.outputs.superseded != 'true'
         env:
           PAGE_USERNAME: ${{ secrets.PAGE_USERNAME_STAGING }}
           PAGE_PASSWORD: ${{ secrets.PAGE_PASSWORD_STAGING }}
@@ -57,6 +92,7 @@ jobs:
           echo "Page credential and cookie secret present."
 
       - name: Deploy to Staging
+        if: steps.tip.outputs.superseded != 'true'
         uses: cloudflare/wrangler-action@v4
         env:
           PAGE_USERNAME: ${{ secrets.PAGE_USERNAME_STAGING }}
