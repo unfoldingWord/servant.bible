@@ -25,24 +25,52 @@ when one does not, find the ADRs that apply anyway. In short:
 - **ADR 0006**: the page at `/` and the HTML view of `/mcp` are behind one
   shared username and password, held as Worker secrets; nothing a program
   calls is gated; the gate fails closed.
+- **ADR 0009**: two long-lived branches. `develop` is the integration branch
+  and staging follows it; `main` is the release branch and production deploys
+  only from a `v*` tag on it.
 
 A new decision is a new ADR plus a row in `docs/README.md`, never a comment in
 code or an issue. If an issue and an ADR disagree, stop and raise it.
 
-## Branch and pull request first
+## Two branches: `develop` and `main`
 
-Never push to `main`. Every change goes on a branch and through a pull
-request. `main` is protected: CI must pass, force pushes and deletions are
-refused, and the rules apply to administrators too.
+Never push to `develop` or `main`. Every change goes on a branch and through a
+pull request (ADR 0009).
+
+- **`develop`** is the integration branch and the default branch. Branch from
+  it and open every pull request against it. It is always releasable: work
+  that is not ready stays on its own branch.
+- **`main`** is the release branch. It receives only `develop` (a release
+  pull request, titled "Release vX.Y.Z: develop → main") or a `hotfix/*`
+  branch. CI's `Release Source` job refuses anything else. Only the
+  repository owner merges into `main`.
+- **Never cherry-pick into `main`.** If something on `develop` must not ship,
+  revert it on `develop`, then release.
+- **Merge methods.** A pull request into `develop` is squash merged and must
+  be up to date with `develop` first. A release or hotfix pull request into
+  `main` uses a merge commit, never squash or rebase; a ruleset on `main`
+  enforces it. Never delete `develop` when merging a release.
+- **Hotfix.** Branch from `main` as `hotfix/<name>`, bump the version, open
+  the pull request into `main`, then open one from `main` into `develop` the
+  same day so `develop` stays ahead.
+
+Both branches are protected: CI must pass, force pushes and deletions are
+refused, and the rules apply to administrators too. The rules are recorded in
+`.github/branch-protection.json`. `pnpm protection:check` compares them with
+the live settings. Change them only by changing that file in a pull request;
+`pnpm protection:apply` is the user's step, or Claude's only on an explicit
+yes.
 
 ## Never deploy by hand
 
 **Never run `wrangler deploy`.** Deployments run from CI only:
 
-- **Staging** deploys automatically when CI passes on `main` after a merge
+- **Staging** deploys automatically when CI passes on `develop` after a merge
   (`.github/workflows/deploy-staging.yml`).
-- **Production** deploys only by manual dispatch of the Deploy workflow
-  (`.github/workflows/deploy.yml`), never automatically.
+- **Production** deploys only by manual dispatch of the Deploy workflow on a
+  release tag (`gh workflow run deploy.yml --ref v<version>`), never
+  automatically. The workflow refuses anything but a `v*` tag whose commit is
+  on `main`. Dispatching it is the user's step, not Claude's.
 
 Both report their version at `/health`: `staging.servant.bible/health` and
 `servant.bible/health`. Verify a deploy with one request there.
@@ -61,7 +89,8 @@ and stop. Code review is run by the user with Codex, not by Claude. Then:
 1. The user pastes the findings back.
 2. Fix every finding, whatever its severity, and push.
 3. Say "Ready for codex code review." again. Repeat until the review is clean.
-4. Ask the user whether to merge. Merge only on an explicit yes.
+4. Ask the user whether to merge. Merge only on an explicit yes. A release
+   or hotfix pull request into `main` is merged by the user.
 
 Do not arrange a review of your own, and do not skip or shortcut the loop.
 
@@ -82,8 +111,11 @@ Every pull request bumps `package.json`. Ask the user which before bumping:
 - **Minor** (`pnpm version minor --no-git-tag-version`): new routes, new
   fields in the list, behaviour changes.
 
-The `version` hook regenerates `src/generated/version.ts` and stages it. After
-the merge, CI tags `main` with `v<version>` (`.github/workflows/tag.yml`).
+The `version` hook regenerates `src/generated/version.ts` and stages it. A
+release pull request (`develop` into `main`) carries no bump of its own: it
+ships the versions its pull requests already bumped. After a release merges,
+CI tags `main` with `v<version>` (`.github/workflows/tag.yml`). `develop` is
+never tagged, and no tag is ever created by hand.
 
 ## Never weaken the gates
 

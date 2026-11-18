@@ -1,10 +1,20 @@
 name: Release Tag
 
-# After CI passes on main, tag the merged commit with the package.json version.
-# Every pull request bumps the version (CLAUDE.md), so each merge gets a tag.
-# A rerun on the same commit is a no-op. A tag that already exists on a
-# different commit means a pull request merged without bumping the version:
-# the job fails so the missed bump is visible, not silently untagged.
+# After CI passes on a push to main, tag that commit with the package.json
+# version. main is the release branch (ADR 0009): it only receives a release
+# (develop into main) or a hotfix/* branch, so each tag is a release, and the
+# production deploy only accepts a v* tag that is on main. develop is never
+# tagged.
+#
+# Every pull request bumps the version (CLAUDE.md), so each release carries a
+# version main has not seen. A rerun on the same commit is a no-op. A tag that
+# already exists on a different commit means main moved without a version
+# bump (a hotfix that skipped it, or a release with nothing new): the job
+# fails so the missed bump is visible, not silently untagged.
+#
+# The branch filter matches a pull request whose head branch is named main as
+# well (one from a fork, say), so the job also requires the CI run to have
+# been triggered by a push.
 on:
   workflow_run:
     workflows: ['CI']
@@ -18,7 +28,7 @@ jobs:
   tag:
     name: Tag main with package.json version
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,7 +46,7 @@ jobs:
               echo "${tag} already points at ${head}; nothing to do."
               exit 0
             fi
-            echo "::error::${tag} already exists at ${existing}, but main is now at ${head}. A pull request merged without bumping package.json; bump it in a follow-up pull request."
+            echo "::error::${tag} already exists at ${existing}, but main is now at ${head}. main moved without a package.json bump; bump it on develop and release again."
             exit 1
           fi
           git config user.name "github-actions[bot]"

@@ -1,6 +1,6 @@
 {
   "name": "servant-bible",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -25,6 +25,8 @@
     "audit:prod": "node scripts/audit-prod.mjs",
     "audit:all": "node scripts/audit-prod.mjs --include-dev --audit-level=high",
     "validate:servers": "node scripts/validate-servers.mjs",
+    "protection:check": "node scripts/branch-protection.mjs",
+    "protection:apply": "node scripts/branch-protection.mjs --apply",
     "prepare": "husky"
   },
   "lint-staged": {
