@@ -21,13 +21,3 @@ export interface ForwardLine {
 export function logForward(line: ForwardLine): void {
   console.log(JSON.stringify({ event: 'forward', ...line }));
 }
-
-/**
- * The page gate (ADR 0006, ADR 0007) found a secret missing in this
- * deployment and answered 503 instead of serving the page open. One line per
- * refused request naming the missing secrets, never a value, so the
- * misconfiguration is visible in Workers Logs rather than silent.
- */
-export function logPageGateUnconfigured(missing: string[]): void {
-  console.error(JSON.stringify({ event: 'page_gate', error: 'not configured', missing }));
-}

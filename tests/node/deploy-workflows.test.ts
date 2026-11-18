@@ -2,12 +2,10 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Pins how the deploy workflows set the page credential (ADR 0006, decision
- * 3). wrangler-action uploads `secrets` with `wrangler secret bulk`, and only
- * its `environment` input adds `--env` to that command; `--env` inside
- * `command` does not carry over. The first staging deploy of 0.5.0 proved it:
- * the staging credential landed on the production Worker and staging answered
- * 503. Plain text assertions, since the repository has no YAML parser.
+ * Pins what the deploy workflows send to Cloudflare. The page is public and
+ * the router holds no secrets (ADR 0010, decision 4), so neither workflow
+ * reads, checks, or uploads a page secret; each still deploys to its own
+ * Worker. Plain text assertions, since the repository has no YAML parser.
  */
 
 const STAGING_YML = readFileSync('.github/workflows/deploy-staging.yml', 'utf8');
@@ -21,43 +19,35 @@ function deployStep(text: string, stepName: string): string {
   return next === -1 ? rest : rest.slice(0, next);
 }
 
-const SECRET_NAMES = ['PAGE_USERNAME', 'PAGE_PASSWORD', 'PAGE_COOKIE_SECRET'];
-
-describe('deploy workflows set the page credential (ADR 0006)', () => {
-  const staging = deployStep(STAGING_YML, 'Deploy to Staging');
-  const production = deployStep(PRODUCTION_YML, 'Deploy to Production');
-
-  it('staging passes the environment input, so the secrets go to the staging Worker', () => {
-    expect(staging).toMatch(/^\s+environment: staging$/m);
-    expect(staging).toMatch(/command: deploy --env staging$/m);
+describe('each deploy workflow deploys to its own Worker', () => {
+  it('staging deploys the staging environment', () => {
+    expect(deployStep(STAGING_YML, 'Deploy to Staging')).toMatch(/command: deploy --env staging$/m);
   });
 
-  it('production passes no environment input, so the secrets go to the top-level Worker', () => {
+  it('production deploys the top-level Worker', () => {
+    const production = deployStep(PRODUCTION_YML, 'Deploy to Production');
     expect(production).not.toMatch(/^\s+environment:/m);
     expect(production).toMatch(/command: deploy$/m);
   });
+});
 
+describe('deploy workflows carry no page secret (ADR 0010, decision 4)', () => {
   it.each([
-    ['staging', staging, 'STAGING'],
-    ['production', production, 'PRODUCTION'],
-  ])('%s uploads all three secrets from its own repository secrets', (_, step, suffix) => {
-    for (const name of SECRET_NAMES) {
-      expect(step).toContain(`${name}: \${{ secrets.${name}_${suffix} }}`);
-      expect(step.split('\n').map((line) => line.trim())).toContain(name);
-    }
+    ['staging', STAGING_YML],
+    ['production', PRODUCTION_YML],
+  ])('%s reads, checks, and uploads none', (_, text) => {
+    expect(text).not.toContain('PAGE_');
+    expect(text).not.toMatch(/^\s+secrets:/m);
+    expect(text).not.toContain('Assert the page credential is present');
   });
 
-  // ADR 0007, decision 7: a missing cookie secret must stop the deploy the
-  // same way a missing credential does, or the gate answers 503 to everyone.
+  // The only repository secrets a deploy may read are the two it needs to
+  // reach Cloudflare.
   it.each([
-    ['staging', STAGING_YML, 'STAGING'],
-    ['production', PRODUCTION_YML, 'PRODUCTION'],
-  ])('%s refuses to deploy when any of the three is empty', (_, text, suffix) => {
-    const assert = deployStep(text, 'Assert the page credential is present');
-    const loop = assert.match(/for name in ([^;]+); do/)?.[1] ?? '';
-    for (const name of SECRET_NAMES) {
-      expect(assert).toContain(`${name}: \${{ secrets.${name}_${suffix} }}`);
-      expect(loop.split(/\s+/)).toContain(name);
-    }
+    ['staging', STAGING_YML],
+    ['production', PRODUCTION_YML],
+  ])('%s reads only the Cloudflare token and account', (_, text) => {
+    const read = [...text.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
+    expect([...new Set(read)].sort()).toEqual(['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN']);
   });
 });

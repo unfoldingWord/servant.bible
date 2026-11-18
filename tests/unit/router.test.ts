@@ -12,16 +12,7 @@ const SCHEMA = { $id: SCHEMA_URL, title: 'fixture schema' };
 
 const router = createRouter({ registry: fixtureRegistry, schema: SCHEMA, fetch: (r) => echo(r) });
 
-// The page credential (ADR 0006) is a Worker secret, so wrangler.toml never
-// carries it; the tests supply one. gate.test.ts covers the gate itself.
-const PAGE = {
-  PAGE_USERNAME: 'reader',
-  PAGE_PASSWORD: 'fixture-password',
-  PAGE_COOKIE_SECRET: 'fixture-cookie-secret',
-};
-const PAGE_AUTH = { authorization: `Basic ${btoa('reader:fixture-password')}` };
-
-const testEnv: Env = { ...(env as unknown as Env), BOUND: echoBinding(), ...PAGE };
+const testEnv: Env = { ...(env as unknown as Env), BOUND: echoBinding() };
 
 function get(path: string, init?: RequestInit): Promise<Response> {
   return router.fetch(new Request(`https://servant.bible${path}`, init), testEnv);
@@ -45,14 +36,26 @@ describe('www.servant.bible (ADR 0002)', () => {
 });
 
 describe('/mcp and /mcp.json', () => {
-  it('gives a browser with the page credential the page', async () => {
+  it('gives a browser the page, with no credential (ADR 0010)', async () => {
     const response = await get('/mcp', {
-      headers: { accept: 'text/html,application/xhtml+xml', ...PAGE_AUTH },
+      headers: { accept: 'text/html,application/xhtml+xml' },
     });
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/html');
     expect(await response.text()).toContain('Servant.Bible');
+  });
+
+  // ADR 0010, decision 6: one address, two answers by Accept, so both say so.
+  it.each([
+    ['the page', 'text/html', 'text/html'],
+    ['the list', 'application/json', 'application/json'],
+  ])('names Accept in Vary on %s', async (_, accept, type) => {
+    const response = await get('/mcp', { headers: { accept } });
+
+    expect(response.headers.get('content-type')).toContain(type);
+    const vary = (response.headers.get('vary') ?? '').toLowerCase().split(/\s*,\s*/);
+    expect(vary).toContain('accept');
   });
 
   it('gives a program the list as JSON', async () => {

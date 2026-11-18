@@ -43,15 +43,15 @@ describe('unknown paths', () => {
 });
 
 describe('GET /', () => {
-  // wrangler.toml carries no page credential (ADR 0006, decision 3), so the
-  // Worker as bundled from it must fail closed, never serve the page open.
-  // router.test.ts and gate.test.ts prove the asset page behind a credential.
-  it('fails closed as bundled, because the credential is a secret and not in wrangler.toml', async () => {
+  // The Worker as bundled from wrangler.toml holds no secret and needs none:
+  // the page is public (ADR 0010).
+  it('serves the page as bundled, with no secret and no credential', async () => {
     const response = await worker.fetch('https://example.com/');
 
-    expect(response.status).toBe(503);
-    expect(response.headers.get('content-type')).toContain('application/json');
-    expect(await response.json()).toEqual({ error: 'page gate not configured' });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(await response.text()).toContain('Servant.Bible');
   });
 });
 

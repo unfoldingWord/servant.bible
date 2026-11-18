@@ -25,7 +25,7 @@ export const REPO: string;
 /** HTML-escape a value for text or an attribute. */
 export function escape(value: unknown): string;
 
-/** The document's opening lines through `</head>`, shared with the sign-in page. */
+/** The document's opening lines through `</head>`, shared with the standard's page. */
 export function documentHead(options: HeadOptions): string[];
 
 /** The site name, linking home. */
@@ -33,9 +33,6 @@ export function brand(): string;
 
 /** The version line and repository link; `source` is what the page says it is generated from. */
 export function colophon(version: string, source?: string): string;
-
-/** The sign-out form (ADR 0007, decision 2). */
-export function signOut(): string;
 
 /** The nav bar around a list of `<li>` items. */
 export function navBar(items: string[]): string;

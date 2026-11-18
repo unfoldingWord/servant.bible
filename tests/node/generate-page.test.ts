@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -39,17 +39,13 @@ describe('generatePage', () => {
     expect(readFileSync(outPath, 'utf8')).toBe(html);
   });
 
-  it('writes the two sign-in pages beside it (ADR 0007)', () => {
+  it('writes the page and the standard and nothing else: no sign-in page (ADR 0010)', () => {
     const dir = path.join(scratch(), 'site');
     const outPath = path.join(dir, 'index.html');
 
     generatePage({ serversPath: SERVERS, schemaPath: SCHEMA, outPath });
 
-    const plain = readFileSync(path.join(dir, 'sign-in.html'), 'utf8');
-    const failed = readFileSync(path.join(dir, 'sign-in-failed.html'), 'utf8');
-    expect(plain).toContain('action="/sign-in"');
-    expect(plain).not.toContain('class="form-error"');
-    expect(failed).toContain('class="form-error"');
+    expect(readdirSync(dir).sort()).toEqual(['index.html', 'standard.html']);
   });
 
   it('throws naming every error and writes nothing when the list is invalid', () => {
@@ -64,8 +60,6 @@ describe('generatePage', () => {
       /duplicate org\/server/
     );
     expect(existsSync(outPath)).toBe(false);
-    expect(existsSync(path.join(dir, 'sign-in.html'))).toBe(false);
-    expect(existsSync(path.join(dir, 'sign-in-failed.html'))).toBe(false);
     expect(existsSync(path.join(dir, 'standard.html'))).toBe(false);
   });
 });
@@ -79,7 +73,7 @@ describe('generatePage and the standard (ADR 0008)', () => {
 
     const standard = readFileSync(path.join(dir, 'standard.html'), 'utf8');
     expect(standard).toContain('<h1>The MCP server standard, v0.1</h1>');
-    expect(standard).toContain('action="/sign-out"');
+    expect(standard).not.toContain('sign-out');
   });
 
   it('throws naming the line and writes nothing when the standard has a construct it cannot render', () => {
