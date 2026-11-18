@@ -25,8 +25,6 @@ when one does not, find the ADRs that apply anyway. In short:
 - **ADR 0006**: the page at `/` and the HTML view of `/mcp` are behind one
   shared username and password, held as Worker secrets; nothing a program
   calls is gated; the gate fails closed.
-- **ADR 0010**: the dependency audit may ignore one advisory at a time, by
-  its id, only while no fix exists, and only on the user's decision.
 - **ADR 0009**: two long-lived branches. `develop` is the integration branch
   and staging follows it; `main` is the release branch and production deploys
   only from a `v*` tag on it.
@@ -127,11 +125,6 @@ Never: add `eslint-disable`, raise a cap, add `|| true`, change an audit
 threshold, skip a hook, or exclude a path. A vulnerable transitive dependency
 is fixed with a `pnpm.overrides` pin in `package.json`, not by lowering the
 bar. If a gate seems wrong, ask the user before touching it.
-
-The one exception is ADR 0010: when an advisory has no patched version at
-all, the user may decide to ignore that one advisory by its id, in
-`pnpm.auditConfig.ignoreGhsas`, with a row in the ADR. Never add an id on your
-own, and remove it as soon as a fix ships.
 
 ## Never silently swallow errors
 

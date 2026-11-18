@@ -14,23 +14,10 @@
  * `/-/npm/v1/security/advisories/bulk` endpoint, matches each advisory's
  * vulnerable range against the installed versions with `semver.satisfies`,
  * and exits non-zero on any finding at or above the threshold.
- *
- * Exceptions (ADR 0010): an advisory is left out of the findings only when
- * its GitHub advisory id is listed in package.json under
- * `pnpm.auditConfig.ignoreGhsas`, the setting `pnpm audit` itself reads. One
- * id names one advisory; there is no way to ignore a package or a severity.
- * Every ignored advisory is still printed on every run.
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import semver from 'semver';
-
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const GHSA_ID = /GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}/i;
-const GHSA_ID_ONLY = /^GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}$/i;
 
 const BULK_ENDPOINT = 'https://registry.npmjs.org/-/npm/v1/security/advisories/bulk';
 const SEVERITY_ORDER = ['info', 'low', 'moderate', 'high', 'critical'];
@@ -128,12 +115,6 @@ function matchedVersions(installed, advisory) {
   return matched;
 }
 
-/** The GitHub advisory id in the advisory's URL, as written there, or null. */
-function ghsaOf(advisory) {
-  const match = GHSA_ID.exec(typeof advisory.url === 'string' ? advisory.url : '');
-  return match ? match[0] : null;
-}
-
 function findingsForPackage(name, pkgAdvisories, installed, auditLevel) {
   const findings = [];
   for (const advisory of pkgAdvisories) {
@@ -148,60 +129,19 @@ function findingsForPackage(name, pkgAdvisories, installed, auditLevel) {
       title: advisory.title ?? '(no title)',
       url: advisory.url ?? '',
       vulnerable_versions: advisory.vulnerable_versions ?? '',
-      ghsa: ghsaOf(advisory),
     });
   }
   return findings;
 }
 
-/**
- * Match the advisories against the installed versions. `findings` fail the
- * audit; `ignored` are the ones `ignoreGhsas` names (ADR 0010). An advisory
- * with no advisory id can never be ignored.
- */
-export function auditFindings(advisories, versionsByName, { auditLevel, ignoreGhsas }) {
-  const ignore = new Set(ignoreGhsas.map((id) => String(id).toUpperCase()));
+function findingsFor(advisories, versionsByName, auditLevel) {
   const findings = [];
-  const ignored = [];
   for (const [name, pkgAdvisories] of Object.entries(advisories)) {
     const installed = versionsByName.get(name);
     if (!Array.isArray(pkgAdvisories) || !installed) continue;
-    for (const finding of findingsForPackage(name, pkgAdvisories, installed, auditLevel)) {
-      const skip = finding.ghsa !== null && ignore.has(finding.ghsa.toUpperCase());
-      (skip ? ignored : findings).push(finding);
-    }
+    findings.push(...findingsForPackage(name, pkgAdvisories, installed, auditLevel));
   }
-  return { findings, ignored };
-}
-
-/**
- * The advisory ids package.json lists under `pnpm.auditConfig.ignoreGhsas`.
- * Anything that is not a full advisory id is refused, so a typo cannot turn
- * into a wider exception or a silent no-op.
- */
-export function ignoredGhsas(pkg) {
-  const list = pkg?.pnpm?.auditConfig?.ignoreGhsas;
-  if (list === undefined) return [];
-  if (!Array.isArray(list)) {
-    throw new Error('pnpm.auditConfig.ignoreGhsas in package.json must be a list');
-  }
-  for (const id of list) {
-    if (typeof id !== 'string' || !GHSA_ID_ONLY.test(id)) {
-      throw new Error(
-        `pnpm.auditConfig.ignoreGhsas: ${JSON.stringify(id)} is not a GHSA-xxxx-xxxx-xxxx id`
-      );
-    }
-  }
-  return list;
-}
-
-/** Ignored advisories are named on every run, so an exception is never silent. */
-function printIgnored(ignored) {
-  for (const f of ignored) {
-    console.warn(
-      `audit-prod: IGNORED by pnpm.auditConfig.ignoreGhsas (ADR 0010): [${f.severity}] ${f.name}@${f.versions.join(',')} ${f.ghsa}: ${f.title}`
-    );
-  }
+  return findings;
 }
 
 function printReport(findings, auditLevel, scope) {
@@ -243,22 +183,12 @@ async function main() {
     console.error(`audit-prod: failed to query advisory endpoint: ${err.message}`);
     process.exit(1);
   }
-  const pkg = JSON.parse(readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
-  const { findings, ignored } = auditFindings(advisories, versionsByName, {
-    auditLevel,
-    ignoreGhsas: ignoredGhsas(pkg),
-  });
-  printIgnored(ignored);
+  const findings = findingsFor(advisories, versionsByName, auditLevel);
   printReport(findings, auditLevel, scope);
   if (findings.length > 0) process.exit(1);
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-
-if (invokedDirectly) {
-  main().catch((err) => {
-    console.error(`audit-prod: unexpected error: ${err.stack || err.message || err}`);
-    process.exit(1);
-  });
-}
+main().catch((err) => {
+  console.error(`audit-prod: unexpected error: ${err.stack || err.message || err}`);
+  process.exit(1);
+});

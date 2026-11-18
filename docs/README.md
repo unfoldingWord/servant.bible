@@ -14,7 +14,6 @@ architecture decision records, one numbered file per decision. Read them in orde
 | [0007](adr/0007-a-sign-in-page-and-a-signed-cookie.md)               | A sign-in page and a signed cookie in front of the page: `401` with the form instead of the browser dialog, a third secret signs a 30-day cookie, fails closed               |
 | [0008](adr/0008-the-mcp-server-standard-is-published-at-standard.md) | The MCP server standard is a document here, published at `/standard`: `docs/mcp-standard.md` v0.1, rendered by the page build, behind the same sign-in, suggestions by issue |
 | [0009](adr/0009-two-branches-develop-and-main.md)                    | Two branches: `develop` is the default and integration branch and staging follows it; `main` is release-only and production deploys only from a `v*` tag on it               |
-| [0010](adr/0010-named-exceptions-to-the-dependency-audit.md)         | The dependency audit may ignore one named advisory at a time: by advisory id only, only when no fix exists, each one recorded in the ADR and printed on every run            |
 
 To add a server or dataset to the registry, follow
 [`adding-a-server.md`](adding-a-server.md). The quality standard every listed
