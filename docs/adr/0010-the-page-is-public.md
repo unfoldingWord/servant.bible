@@ -49,8 +49,12 @@ decision changes only what a person in a browser meets.
 5. **The page is answered with the asset layer's own caching headers.** The
    gate marked every page response `private, no-store` because the response
    was a secret. It no longer is, so the router stops overwriting
-   `cache-control`: the asset layer's headers pass through, a browser
-   revalidates by `ETag`, and a deploy shows on the next request.
+   `cache-control`: the asset layer's headers pass through. As deployed that
+   is `public, max-age=0, must-revalidate`, so nothing stale is kept and a
+   deploy shows on the next request. The deployed page carries no `ETag`
+   (observed on both environments on 2026-11-19, although the local Workers
+   runtime sends one), so a browser fetches the page again on each visit
+   rather than receiving a `304`.
 6. **`/mcp` answers `Vary: Accept`.** The address gives the page to a request
    that accepts HTML and the list as JSON to everything else. With the page
    now cacheable, both answers name `Accept` in `Vary`, so a cache never hands
