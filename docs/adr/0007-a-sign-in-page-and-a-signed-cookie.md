@@ -1,6 +1,6 @@
 # ADR 0007: A sign-in page and a signed cookie in front of the page
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR 0010](0010-the-page-is-public.md) on 2026-11-18
 - **Date:** 2026-11-01
 - **Deciders:** Ian Lindsley
 - **Task:** Issue #39

@@ -84,10 +84,9 @@ describe('the real servers.json', () => {
 describe('the page-level links', () => {
   const html = renderPage(servers, OPTIONS);
 
-  it('carries the sign-out form in the nav (ADR 0007, decision 2)', () => {
-    expect(html).toContain(
-      '<form class="sign-out" method="post" action="/sign-out"><button type="submit">Sign out</button></form>'
-    );
+  it('carries no sign-out and no form: the page is public (ADR 0010)', () => {
+    expect(html).not.toContain('sign-out');
+    expect(html).not.toContain('<form');
   });
 
   it('carries the page-level links, the standard among them (ADR 0008)', () => {

@@ -102,7 +102,9 @@ describe('staging follows develop', () => {
     expect(guardAt).toBeGreaterThan(-1);
     const after = STAGING_YML.slice(STAGING_YML.indexOf('\n      - ', guardAt));
     const steps = after.split(/\n {6}- /).filter((s) => s.trim() !== '');
-    expect(steps.length).toBeGreaterThanOrEqual(6);
+    // Install pnpm, Setup Node.js, Install dependencies, Build, Deploy: the
+    // credential check left with the gate (ADR 0010).
+    expect(steps.length).toBeGreaterThanOrEqual(5);
     expect(steps.some((s) => s.includes('wrangler-action'))).toBe(true);
     for (const s of steps) {
       expect(s, s.split('\n')[0]).toContain(NOT_SUPERSEDED);

@@ -148,18 +148,16 @@ describe('the real docs/mcp-standard.md', () => {
 describe('the standard page’s links', () => {
   const html = renderStandard({ ...OPTIONS, markdown: STANDARD });
 
-  it('carries the nav home and the sign-out form, like the page', () => {
+  it('carries the nav home and no sign-out (ADR 0010)', () => {
     expect(html).toContain('<a class="brand" href="/">');
     expect(html).toContain('<li><a href="/">Servers</a></li>');
-    expect(html).toContain(
-      '<form class="sign-out" method="post" action="/sign-out"><button type="submit">Sign out</button></form>'
-    );
+    expect(html).not.toContain('sign-out');
+    expect(html).not.toContain('<form');
   });
 
-  it('links and posts only to addresses the router answers', () => {
+  it('links only to addresses the router answers', () => {
     const internal = [...html.matchAll(/(?:href|action)="(\/[^"]*)"/g)].map((m) => m[1] ?? '');
     expect(internal).toContain('/');
-    expect(internal).toContain('/sign-out');
     for (const target of internal) {
       expect(parseRoute(target).kind, target).not.toBe('unknown');
     }

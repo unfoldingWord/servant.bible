@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * Generate public/index.html from servers.json (#9), and beside it the two
- * sign-in pages the gate answers with (ADR 0007), sign-in.html and
- * sign-in-failed.html, and the MCP server standard rendered from
- * docs/mcp-standard.md (ADR 0008), standard.html.
+ * Generate public/index.html from servers.json (#9), and beside it the MCP
+ * server standard rendered from docs/mcp-standard.md (ADR 0008),
+ * standard.html.
  *
  * The pages are built, never hand-edited: the router serves whatever is in
  * public/, and the files are gitignored so they cannot drift from the list,
@@ -23,7 +22,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { renderPage } from './page/render.mjs';
-import { renderSignIn } from './page/sign-in.mjs';
 import { renderStandard } from './page/standard.mjs';
 import { validateServers } from './validate-servers.mjs';
 
@@ -41,8 +39,6 @@ function readJson(file) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
 
-/** The sign-in pages' file names, beside index.html; the router fetches them by these paths. */
-export const SIGN_IN_FILES = { plain: 'sign-in.html', failed: 'sign-in-failed.html' };
 /** The standard's file name, beside index.html; the router fetches it by this path (ADR 0008). */
 export const STANDARD_FILE = 'standard.html';
 
@@ -69,10 +65,10 @@ function readStandard(standardPath, css, version) {
 }
 
 /**
- * Validate the list, render the page, the two sign-in pages, and the
- * standard, write them beside `outPath`, and return the page's HTML. Throws,
- * writing nothing, when the list fails the schema or the standard has
- * Markdown the renderer does not know.
+ * Validate the list, render the page and the standard, write the standard
+ * beside `outPath`, and return the page's HTML. Throws, writing nothing, when
+ * the list fails the schema or the standard has Markdown the renderer does
+ * not know.
  */
 export function generatePage(paths = {}) {
   const { serversPath, schemaPath, standardPath, outPath } = { ...DEFAULTS, ...paths };
@@ -85,8 +81,6 @@ export function generatePage(paths = {}) {
   const dir = path.dirname(outPath);
   mkdirSync(dir, { recursive: true });
   writeFileSync(outPath, html, 'utf8');
-  writeFileSync(path.join(dir, SIGN_IN_FILES.plain), renderSignIn({ css, version, failed: false }));
-  writeFileSync(path.join(dir, SIGN_IN_FILES.failed), renderSignIn({ css, version, failed: true }));
   writeFileSync(path.join(dir, STANDARD_FILE), standard, 'utf8');
   return html;
 }
@@ -98,8 +92,7 @@ if (invokedDirectly) {
   try {
     const html = generatePage();
     const relative = path.relative(REPO_ROOT, DEFAULTS.outPath);
-    const beside = [...Object.values(SIGN_IN_FILES), STANDARD_FILE].join(', ');
-    console.log(`Generated ${relative} (${html.length} characters) and ${beside} beside it`);
+    console.log(`Generated ${relative} (${html.length} characters) and ${STANDARD_FILE} beside it`);
   } catch (error) {
     console.error(`generate-page: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;

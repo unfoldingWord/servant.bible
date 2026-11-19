@@ -10,7 +10,7 @@
  * page (ADR 0008, decision 3). Everything is escaped on the way out.
  */
 
-import { REPO, colophon, documentHead, escape, navBar, signOut } from './render.mjs';
+import { REPO, colophon, documentHead, escape, navBar } from './render.mjs';
 
 const TITLE = 'MCP server standard · Servant.Bible';
 /** What the colophon says this page is generated from. */
@@ -127,7 +127,6 @@ export function renderStandard(options) {
   const items = [
     '<li><a href="/">Servers</a></li>',
     `<li class="optional"><a href="${REPO}">GitHub</a></li>`,
-    `<li>${signOut()}</li>`,
   ];
   const doc = `<article class="standard-doc"><span class="eyebrow">Quality standard</span>${article}</article>`;
   const main = `<main class="scroll"><div class="page standard">${doc}${colophon(version, SOURCE)}</div></main>`;

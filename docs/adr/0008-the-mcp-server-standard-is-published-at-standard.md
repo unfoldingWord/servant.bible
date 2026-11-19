@@ -4,6 +4,8 @@
 - **Date:** 2026-11-02
 - **Deciders:** Ian Lindsley
 - **Task:** Issue #20
+- **Amended by:** [ADR 0010](0010-the-page-is-public.md), which removes the
+  sign-in from `/standard` (decision 4 here)
 - **Amends:** [ADR 0006](0006-the-page-behind-a-shared-password.md), decision 1
 - **Depends on:** [ADR 0004](0004-hosting-agnostic-registry.md),
   [ADR 0006](0006-the-page-behind-a-shared-password.md),
