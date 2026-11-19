@@ -1,6 +1,6 @@
 # ADR 0006: The page is behind a shared password, nothing else is
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR 0010](0010-the-page-is-public.md) on 2026-11-18
 - **Date:** 2026-10-30
 - **Deciders:** Ian Lindsley, at the vision owner's request
 - **Task:** Issue #35

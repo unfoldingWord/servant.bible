@@ -25,7 +25,7 @@ than this page.
 | [`servers.schema.json`](servers.schema.json) | The JSON Schema that `pnpm validate:servers` checks the registry against, in the pre-commit hook and in CI.                                                                                                                  |
 | [`docs/`](docs/)                             | Documentation: the [decision records](docs/README.md) and the [MCP server standard](docs/mcp-standard.md), which the build renders at `/standard`.                                                                           |
 | [`src/`](src/)                               | The router Worker that owns the apex ([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)).                                                                                                                           |
-| [`public/`](public/)                         | Static assets the Worker serves. `index.html`, `sign-in.html`, `sign-in-failed.html`, and `standard.html` are generated on every build (`pnpm generate:page`) and are not committed.                                         |
+| [`public/`](public/)                         | Static assets the Worker serves. `index.html` and `standard.html` are generated on every build (`pnpm generate:page`) and are not committed.                                                                                 |
 | [`tests/`](tests/)                           | Vitest tests: `unit/` runs inside the Workers runtime, `node/` covers the dev-time scripts.                                                                                                                                  |
 | [`.github/`](.github/)                       | CI on every pull request, deployments from CI, Dependabot.                                                                                                                                                                   |
 | Issues                                       | Proposed datasets and servers, such as a Bible passages dataset and a strategic languages list.                                                                                                                              |
@@ -41,14 +41,12 @@ The router answers every address in
 `www.servant.bible` redirecting to the apex. Forwarding is a proxy,
 never a redirect: method, body, and headers pass through, the response streams
 back, and the router holds no credential for any server
-([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)). The page at `/`
-and the browser view of `/mcp` are behind a shared username and password for
-now ([ADR 0006](docs/adr/0006-the-page-behind-a-shared-password.md)), entered
-once on a sign-in page and kept by a signed cookie for 30 days
-([ADR 0007](docs/adr/0007-a-sign-in-page-and-a-signed-cookie.md)), as is the
-standard at `/standard`
-([ADR 0008](docs/adr/0008-the-mcp-server-standard-is-published-at-standard.md));
-every address a program calls, `/mcp.json` included, is open.
+([ADR 0003](docs/adr/0003-one-router-worker-at-the-apex.md)). The page at `/`,
+the browser view of `/mcp`, and the standard at `/standard`
+([ADR 0008](docs/adr/0008-the-mcp-server-standard-is-published-at-standard.md))
+are public, like every address a program calls: nothing at `servant.bible`
+asks for a credential, and the router holds no secret
+([ADR 0010](docs/adr/0010-the-page-is-public.md)).
 
 | Path                                           | Behaviour                                                                                                                                                           |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -59,10 +57,8 @@ every address a program calls, `/mcp.json` included, is open.
 | `/mcp`                                         | A browser (`Accept: text/html`) gets the page; anything else gets the list as JSON.                                                                                 |
 | `/mcp.json`                                    | Always the list as JSON, with `$schema` pointing at `/servers.schema.json`.                                                                                         |
 | `/servers.schema.json`                         | The schema the list is checked against.                                                                                                                             |
-| `/`                                            | The page, generated from `servers.json`. Without the cookie or a Basic header, `401` with the sign-in page.                                                         |
-| `/standard`                                    | The MCP server standard, rendered from `docs/mcp-standard.md`, behind the same sign-in as `/`.                                                                      |
-| `/sign-in`                                     | `GET` the sign-in page; `POST` the form to get the cookie and a `303` to `/`, or `401` with the page again.                                                         |
-| `/sign-out`                                    | `POST` answers `303` to `/`, clearing the cookie when the request carries a valid one.                                                                              |
+| `/`                                            | The page, generated from `servers.json`.                                                                                                                            |
+| `/standard`                                    | The MCP server standard, rendered from `docs/mcp-standard.md`.                                                                                                      |
 | `/health`                                      | The router's version, environment, and the number of servers it routes.                                                                                             |
 | `www.` host                                    | `308` to the same path on the apex.                                                                                                                                 |
 
@@ -118,17 +114,10 @@ Domains declared in `wrangler.toml`, and `tests/node/wrangler-config.test.ts` pi
 deployment owns. The `workers.dev` names of both deployments stay on as
 fallbacks for now. Each deployment reports its version at `/health`.
 
-The page credential and the cookie secret (ADR 0006, ADR 0007) are three
-Worker secrets, `PAGE_USERNAME`, `PAGE_PASSWORD`, and `PAGE_COOKIE_SECRET`, that
-each deploy workflow sets from the GitHub repository secrets
-`PAGE_USERNAME_STAGING`, `PAGE_PASSWORD_STAGING`, `PAGE_COOKIE_SECRET_STAGING`,
-`PAGE_USERNAME_PRODUCTION`, `PAGE_PASSWORD_PRODUCTION`, and
-`PAGE_COOKIE_SECRET_PRODUCTION`. A deploy refuses to run when any of its three
-is missing. Rotating the credential is changing the repository secrets and
-deploying; a new password signs every browser out, because the cookie is
-signed over the credential. For `wrangler dev`, copy `.dev.vars.example` to
-`.dev.vars` and fill it in; without all three values the local page answers
-`503`, as any deployment missing a secret would.
+A deploy needs two repository secrets, `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID`, and no other: the Worker holds no secret of its own
+([ADR 0010](docs/adr/0010-the-page-is-public.md)), and `wrangler dev` needs no
+local values.
 
 See [`CLAUDE.md`](CLAUDE.md) for the rules every contributor and agent follows
 here.

@@ -178,14 +178,9 @@ function section(spec, entries) {
   return `<section class="section" id="${spec.id}"><div class="section-head">${heading}<p>${spec.blurb}</p></div><ul class="${spec.list}">${items}</ul></section>`;
 }
 
-/** The site name, linking home; shared with the sign-in page. */
+/** The site name, linking home. */
 export function brand() {
   return `<a class="brand" href="/"><span class="brand-dot"></span>Servant.Bible</a>`;
-}
-
-/** Sign out clears the cookie (ADR 0007, decision 2); a form, because it changes state. Shared with the standard's page. */
-export function signOut() {
-  return `<form class="sign-out" method="post" action="/sign-out"><button type="submit">Sign out</button></form>`;
 }
 
 /** The nav bar around a list of `<li>` items; shared with the standard's page. */
@@ -198,7 +193,6 @@ function nav(entries) {
   const items = present.map((spec) => `<li><a href="#${spec.id}">${spec.title}</a></li>`);
   items.push(`<li><a href="/standard">Standard</a></li>`);
   items.push(`<li class="optional"><a href="${REPO}">GitHub</a></li>`);
-  items.push(`<li>${signOut()}</li>`);
   return navBar(items);
 }
 
@@ -225,7 +219,7 @@ function hero(entries, version) {
 }
 
 /**
- * The version line and repository link; shared with the sign-in page and the
+ * The version line and repository link; shared with the
  * standard, which names its own source.
  */
 export function colophon(version, source = 'servers.json') {
@@ -234,7 +228,7 @@ export function colophon(version, source = 'servers.json') {
 
 /**
  * The document's opening lines through `</head>`, as an array of lines;
- * shared with the sign-in page so both carry the same metadata, fonts, and
+ * shared with the standard so both carry the same metadata, fonts, and
  * inlined stylesheet.
  */
 export function documentHead({ title, description, css }) {

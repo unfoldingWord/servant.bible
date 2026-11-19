@@ -22,12 +22,13 @@ when one does not, find the ADRs that apply anyway. In short:
 - **ADR 0005**: the list holds servers and datasets, each with a `kind` and a
   `status`; nothing listed is hidden; `purpose` and `sources` are per entry;
   the file is JSON, checked against `servers.schema.json` in CI.
-- **ADR 0006**: the page at `/` and the HTML view of `/mcp` are behind one
-  shared username and password, held as Worker secrets; nothing a program
-  calls is gated; the gate fails closed.
 - **ADR 0009**: two long-lived branches. `develop` is the integration branch
   and staging follows it; `main` is the release branch and production deploys
   only from a `v*` tag on it.
+- **ADR 0010**: the page at `/`, the HTML view of `/mcp`, and `/standard` are
+  public. Nothing at `servant.bible` asks for a credential and the router
+  holds no secret. ADR 0006 and ADR 0007 (the shared password and the sign-in
+  page) are superseded.
 
 A new decision is a new ADR plus a row in `docs/README.md`, never a comment in
 code or an issue. If an issue and an ADR disagree, stop and raise it.
@@ -75,11 +76,10 @@ yes.
 Both report their version at `/health`: `staging.servant.bible/health` and
 `servant.bible/health`. Verify a deploy with one request there.
 
-The page at `/` is behind a shared username and password (ADR 0006). The
-credential is two Worker secrets that only the deploy workflows set, from the
-GitHub repository secrets named in the README. **Never run `wrangler secret`**,
-never put a credential in `wrangler.toml`, `.dev.vars.example`, a test, an
-issue, or a pull request. Nothing a program calls is gated; keep it that way.
+The router holds no secrets and nothing it serves asks for a credential (ADR
+0010). **Never run `wrangler secret`**, never put a credential in
+`wrangler.toml`, a test, an issue, or a pull request. Putting a gate in front
+of any address is a new decision and a new ADR, never a quick change.
 
 ## Never merge without review
 

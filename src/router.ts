@@ -1,5 +1,4 @@
 import { forward } from './forward.js';
-import { gated, showSignIn, signIn, signOut, type GateEnv, type PageAssets } from './gate.js';
 import { APP_VERSION } from './generated/version.js';
 import { json } from './http.js';
 import { listBody, wantsHtml } from './list.js';
@@ -8,15 +7,15 @@ import { resolveTarget } from './resolve.js';
 import { parseRoute, type Route, type ServerRoute, type ShorthandRoute } from './routes.js';
 
 /**
- * The router (ADR 0003, decision 4): the page at `/` with its sign-in and
- * sign-out (ADR 0007), the standard at `/standard` behind the same gate
- * (ADR 0008), the list at `/mcp` and `/mcp.json`, and forwarding for
- * `/org/...` and `/s/...`. Built from its dependencies so tests can hand
- * it a fixture registry and stub backends; index.ts builds the real one from
+ * The router (ADR 0003, decision 4): the page at `/`, the standard at
+ * `/standard` (ADR 0008), the list at `/mcp` and `/mcp.json`, and forwarding
+ * for `/org/...` and `/s/...`. Every address is public and the router holds
+ * no secret (ADR 0010). Built from its dependencies so tests can hand it a
+ * fixture registry and stub backends; index.ts builds the real one from
  * servers.json.
  */
 
-export interface Env extends GateEnv {
+export interface Env {
   ASSETS: Fetcher;
   ENVIRONMENT: string;
   /** Service bindings named by `binding` in servers.json (ADR 0003, decision 8). */
@@ -88,55 +87,41 @@ function health({ deps, env }: Ctx): Response {
 }
 
 /**
- * The pages the gate answers with, from the asset layer: the gated page at
- * `pagePath` (the page as `/` whatever the request path was, or the
- * standard) and the two sign-in pages. HEAD stays HEAD so a refused HEAD has
- * no body; any other method fetches with GET, so a failed POST to /sign-in
- * can still show the form.
+ * A page from the asset layer, to everyone (ADR 0010, decision 1): the page
+ * as `/` whatever the request path was, or the standard. Callers apply
+ * `readOnly` first, so the method is GET or HEAD and is kept: a HEAD has no
+ * body. The request's headers go with it, so a conditional request is
+ * answered `304`, and the asset layer's caching headers come back untouched
+ * (decision 5).
  */
-function pageAssets({ env, request, url }: Ctx, pagePath = '/'): PageAssets {
-  const method = request.method === 'HEAD' ? 'HEAD' : 'GET';
-  const asset = (path: string, headers?: Headers) =>
-    env.ASSETS.fetch(
-      new Request(new URL(path, url), { method, ...(headers === undefined ? {} : { headers }) })
-    );
-  return {
-    page: () => asset(pagePath, request.headers),
-    signIn: (failed) => asset(failed ? '/sign-in-failed.html' : '/sign-in.html'),
-  };
+function page({ env, request, url }: Ctx, pagePath = '/'): Promise<Response> {
+  return env.ASSETS.fetch(
+    new Request(new URL(pagePath, url), { method: request.method, headers: request.headers })
+  );
 }
 
-/**
- * The page, behind the gate (ADR 0006, ADR 0007), or the standard behind the
- * same gate (ADR 0008). Callers apply `readOnly` first: a write is refused
- * before the credential is looked at, and never turned into a GET.
- */
-function page(ctx: Ctx, pagePath = '/'): Promise<Response> {
-  return gated(ctx.env, ctx.request, pageAssets(ctx, pagePath));
-}
-
-function list(ctx: Ctx, explicitJson: boolean): Response | Promise<Response> {
-  return readOnly(ctx.request, () => {
-    if (!explicitJson && wantsHtml(ctx.request)) return page(ctx);
-    return json(listBody(ctx.deps.registry));
+/** The same response naming `Accept` in `Vary`, beside whatever it already names. */
+function varyingOnAccept(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.append('vary', 'Accept');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
   });
 }
 
-function signInRoute(ctx: Ctx): Response | Promise<Response> {
-  switch (ctx.request.method) {
-    case 'GET':
-    case 'HEAD':
-      return showSignIn(ctx.env, pageAssets(ctx));
-    case 'POST':
-      return signIn(ctx.env, ctx.request, pageAssets(ctx));
-    default:
-      return methodNotAllowed('GET, HEAD, POST');
-  }
-}
-
-function signOutRoute(ctx: Ctx): Response | Promise<Response> {
-  if (ctx.request.method !== 'POST') return methodNotAllowed('POST');
-  return signOut(ctx.env, ctx.request);
+/**
+ * `/mcp.json` is always the list. `/mcp` is the page to a request that
+ * accepts HTML and the list to everything else, so both of its answers vary
+ * on `Accept` (ADR 0010, decision 6).
+ */
+function list(ctx: Ctx, explicitJson: boolean): Response | Promise<Response> {
+  return readOnly(ctx.request, async () => {
+    if (explicitJson) return json(listBody(ctx.deps.registry));
+    if (wantsHtml(ctx.request)) return varyingOnAccept(await page(ctx));
+    return json(listBody(ctx.deps.registry), 200, { vary: 'Accept' });
+  });
 }
 
 function server(ctx: Ctx, route: ServerRoute | ShorthandRoute): Promise<Response> {
@@ -156,10 +141,6 @@ function fixed(route: Route, ctx: Ctx): Response | Promise<Response> | undefined
       return readOnly(ctx.request, () => page(ctx));
     case 'standard':
       return readOnly(ctx.request, () => page(ctx, STANDARD_ASSET));
-    case 'sign-in':
-      return signInRoute(ctx);
-    case 'sign-out':
-      return signOutRoute(ctx);
     case 'health':
       return readOnly(ctx.request, () => health(ctx));
     case 'schema':
